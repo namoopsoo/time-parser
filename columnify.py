@@ -1,0 +1,415 @@
+#!/usr/bin/python
+
+import sys
+import math
+import re
+from datetime import timedelta
+from time import gmtime, strftime, localtime, mktime
+
+YEAR = 2012
+
+class Columnify ():
+
+	
+
+	def __init__ (self, cols=[],filename  ="" ):
+
+		self.d_init = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+
+
+		if filename   != "":
+			self.refColsFromFile ( filename  ) 
+
+			self.datasets = {}
+			return
+
+		if cols != []:
+			self.ref_columns = cols
+
+	# take list of words , output column data
+	# column data says what columns match per input list
+	def organizeWords (self, line=[] ):
+
+		out_str = ""
+		
+		if line == []:
+			out_str = "\t"*len( self.ref_columns )
+			return out_str
+	
+		for w in self.ref_columns :
+
+			true = False
+			for x in line:
+				if x == w :
+					true = True
+					break
+
+			if true == True :
+				out_str = out_str + "y\t"
+			else:
+				out_str = out_str + "n\t"
+
+		return out_str
+	def classifyData ( self):
+		pass
+
+	def makeTabData (self,datatype=None, dset_name=None ):
+
+		if dset_name == None:
+			return
+		try:
+			self.datasets[dset_name]	
+		except KeyError:
+			return
+
+		k=1
+
+		out_str = "category\t"*k
+
+		if self.datasets[dset_name]	== []: 
+			return
+
+		# line 1 should be col names
+		for word in self.ref_columns :
+			out_str +=  word + "\t"
+
+		out_str += "\n" + "d\t"*(len(self.ref_columns) + k) + "\n"  # line 2
+		out_str += "class"*k + "\t"*(k + len(self.ref_columns)) + "\n" # line 3
+
+		for line in self.datasets[dset_name]	: 
+			if line != "":
+				line_parts = line.split(None, k)
+
+				category = line_parts [0]
+				remainder = line_parts [k]
+	
+				out_str +=  category*k + "\t"*k + self.organizeWords 	( remainder.split() ) + "\n"
+		return out_str
+
+	# oobtain the col reference from a file   of sorted words
+	# apple
+	# betty 
+	# creppe 
+	# manage 
+	# zeppy 
+	# 
+	def refColsFromFile ( self , filename ) :
+
+		try:
+			f = open ( filename   ) 
+		except IOError:
+			return		
+
+		self.ref_columns =  f.read().split("\n")
+		
+		# cut off last 'empty' element, which is there for some reason 
+		self.ref_columns = self.ref_columns [ : ( len( self.ref_columns ) -1 ) ]
+
+	# read a timesheet data file
+	def readDataFile (self,filename  = "",datatype=None,  dset_name=None  ):
+		if dset_name == None:
+			return
+		try:
+			f = open ( filename  )
+		except IOError:
+			return		
+
+		self.datasets[dset_name]	= 	f.read().split("\n")
+
+def retrieveWord ( orange_data , line_num ) :
+	line = ""
+
+	for i in range(len(orange_data.domain.attributes)):
+		if orange_data[ line_num ][i].value == 'y':
+
+			line += orange_data.domain.attributes[i].name + " "
+
+	return line
+
+def testClassifier ( classifier , orange_data ) :
+	for i in range(len(orange_data)):
+		c = classifier ( orange_data[i] )
+		print retrieveWord ( orange_data , i )   
+		print "		, classified as " , c , " ( " , orange_data[i].getclass() , " )"
+		print ""
+
+# data1 = orange.ExampleTable( "work")
+#  data2 = orange.ExampleTable( "work-test") 
+#  classifier = orange.BayesLearner (data1)
+
+
+# prepare timesheet file for training
+def stripTimeFromFile( filename, filename_new) :
+	try:
+		fin = open ( filename ) 
+		fout = open ( filename_new ,"w") 
+	except IOError:
+		print "prob w files"
+		return
+
+	for line in  fin.readlines() : 
+		fout.write ( line.split(' ',3)[3] ) 
+
+
+
+def parseLineWTime ( tupl ): 
+	"""Take in one timesheet line and output delta hours and category
+
+		Use the following category abbreviations
+		cor : cortix work
+		cor : cortix business development hours
+		fun : fun , e.g. with friends, entertainment
+		prj : other projects besides cortix
+		sup : supportive , e.g. sleep, cleaning, transport
+		fin : financials, paying bills etc,
+		gym : any working out, biking
+		red : reading 
+		unk : unknown , unaccounted for , will be assigned to supportive
+
+	"""
+
+	try:
+		h1,m1 = tupl[0].split(":")
+		h2,m2 = tupl[2].split(":")
+		activity = tupl[3] 	
+		notes = tupl[4]
+	except IndexError:
+		return 0.0, "unk", []
+
+	t1 = timedelta(hours=int(h1), minutes=int(m1))
+	t2 = timedelta(hours=int(h2), minutes=int(m2))
+
+	delta = t2 - t1
+
+	return delta.seconds / (3600.0) , activity, notes
+
+def displayHours (hours):
+	s = "{"
+	for elem in hours:
+
+		s += "%s: %.2f, " % (elem, round_quarter(hours[elem]))
+	s+= "}\n"
+	return s
+
+def aggregHours (a ,b):
+	for elem in b:
+		a[elem] += b[elem]
+
+def parseDay ():
+	timesheet = "/Users/michalpiekarczyk/current projects/cortix A098/orange-time_sheet-classification/timesheet data/apr2011.txt" 
+
+	hours=self.d_init
+	total_hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+	week_total={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+	date_re = re.compile(r"[0-9][0-9]/[0-9][0-9]")
+	hours_re = re.compile(r"[0-9][0-9]:[0-9][0-9]")
+
+	try:
+		f = open(timesheet)
+	except IOError:
+		sys.exit( "can't open " + timesheet ) 
+	
+	lines = f.readlines()
+	batch = ""; mo=""; day=""
+
+	for line in lines:
+		if line == "":
+			pass
+		elif date_re.match(line):
+
+			total = checkTwentyFour (hours) 
+			# print "total: ", total, ", mo/day: ", mo, "/", day
+
+			if total == 0:
+				mo, day = line.split("/"); day = str(int(day))
+				# print "******changing mo,day to ", mo, "/", day
+				continue
+
+			elif total < 24.0 :
+				hours["unk"] += 24.0 - float(total)
+
+			batch += "%s/%s: " % (mo,day)
+			batch += displayHours (hours)
+			for elem in hours:
+				total_hours[elem] += hours[elem]
+				week_total[elem] += hours[elem]
+
+			if weekday(mo,day) is 6:  	
+				# its Sunday
+				batch = displayHours (week_total) + batch + "\n"
+				week_total={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+				sys.stdout.write(batch)
+				batch = ""
+
+			# print "&&&&&&&&&setting hours to 0"
+			hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+
+			mo, day = line.split("/"); day = str(int(day))
+			# print "******changing mo,day to ", mo, "/", day
+
+		elif hours_re.match ( line ) :
+
+			delta, activity = parseLineWTime (line.split())
+	
+			try:
+				hours[activity] += delta
+			except KeyError:
+				sys.exit( "key " + activity + " not found")
+		else:
+			errout = open("error.log","a")
+			errout.write( strftime("[%m%d%y_%H%Ma]") + " Warning: not able to parse: \""+ line + "\"") 
+			errout.close()
+
+	print "totals: (", checkTwentyFour(total_hours), ")"
+	displayHours(total_hours)
+
+def checkTwentyFour (hours):
+	total=0.0
+	for elem in hours:
+		total += hours[elem]
+	return total
+
+def weekday(mo,day):
+	b = (YEAR,int(mo),int(day),00,00,00,0,0,0)
+	d = localtime(mktime(b))
+	return d.tm_wday
+
+def round_quarter(time):
+	"""Rounds to nearest quarter hour.
+
+	7.33 rounds to 7.25
+	"""
+
+	x = time - math.floor(time)	
+
+	b = math.floor( (x-.0001)/.25) * .25
+	d = x/.25
+	if math.ceil(d) - d < .5:
+		return b + math.floor(time) +.25
+	return math.floor(time) + b
+
+def round_difference (original, rounded):
+	"""Returns categorization of a rounding result."""
+
+	delta = original - rounded
+	if  original - rounded > 0:
+		return ("fewer",delta)
+	else:
+		return ("more",-delta)
+
+
+
+def parse_timesheet (timesheet):
+	'''Take a timesheet file and spit out a report.
+
+	Produces project hours breakdown per day and weekly aggregation. 
+	Also creates a report with work comments per day.
+	'''
+
+	hours = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+	total_hours = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+	week_total = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+	rounding_totals = {"more":0, "fewer":0}
+	date_re = re.compile(r"[0-9][0-9]/[0-9][0-9]")
+	hours_re = re.compile(r"[0-9][0-9]:[0-9][0-9]")
+	cor_re = re.compile(r"cor")
+	timesh_re = re.compile(r"(timesheet|time sheet)")	
+	comment_re = re.compile(r"^#")	
+	business_days_count = 0
+
+	today = int(strftime("%d"))
+
+	try:
+		f = open(timesheet)
+	except IOError:
+		sys.exit( "can't open " + timesheet ) 
+
+	r = open("report_" + strftime("%m%d%y_%H%M.txt"), "w")
+	r_clean = open("report_clean_" + strftime("%m%d%y_%H%M.txt"), "w")
+
+	
+	lines = f.readlines()
+	batch = ""; mo=""; day=""; n_mo=""; n_day="" ; notes =""
+
+	for line in lines:
+		if hours_re.match (line) :
+			delta, activity, notes = parseLineWTime (line.split(' ',4))
+		
+			# keep track of what is getting rounded 
+			round_how, round_diff = round_difference (delta, round_quarter (delta))
+			rounding_totals [round_how] += round_diff
+
+ 			try:
+ 				hours[activity] += delta
+ 			except KeyError:
+				print line.split()
+ 				sys.exit( "key '" + activity + "' not found, delta:'"+str(delta)+"', line: '"+line+"'")
+
+			if cor_re.match(activity):
+				r.write( str("%.2f" % delta) + "\t" + str(notes) )
+
+				if timesh_re.search(notes) is None: 
+					r_clean.write( str(notes) )
+			
+		elif date_re.match(line):
+
+			n_mo, n_day = line.split("/"); n_day = str(int(n_day))
+			w = weekday(n_mo,n_day)
+
+			r.write( "\n" + line.strip() +":\n")
+			r_clean.write( "\n" + line.strip() +":\n")
+
+			if w is 0:  	
+				batch +=  mo + "/"+ day  + ": " + displayHours(hours)
+				aggregHours(week_total,hours);aggregHours(total_hours,hours);
+
+				deficit = "(cor deficit: " + str(40.0 - week_total["cor"]) + "/40 )\n"
+
+				# week_total["unk"] += checkTwentyFour 
+
+				sys.stdout.write(displayHours(week_total) + deficit + batch + "\n")
+				mo, day = n_mo, n_day 
+
+				batch = "";week_total={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+				hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+
+				if int(day) <= today:
+					business_days_count += 1
+
+			elif w > 0 and w <= 6:  	
+				aggregHours(week_total,hours);aggregHours(total_hours,hours);
+
+				batch +=  mo + "/"+ day  + ": " + displayHours(hours)
+				mo, day = n_mo, n_day 
+				hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+
+				# if Tue, Wed, Thu, Fri
+				if w in [1,2,3,4] and int(day) <= today:
+					business_days_count += 1
+
+
+			else:
+				sys.exit("date nonmatch: \'" + n_mo + "\', \'" + n_day + "\', w="+str(w))
+
+		elif comment_re.match(line):
+			pass
+		elif line == "":
+			pass
+		else:
+			errout = open("error.log","a")
+			errout.write( strftime("[%m%d%y_%H%M]") + " Warning: not able to parse: \""+ line + "\"") 
+			errout.close()
+
+
+	# display totals...
+	print 'month totals:\n' + displayHours(total_hours)
+
+	goal_hours_so_far = business_days_count * 8
+	print 'By the end of %s/%s, want to finish about %d hours for this month' \
+					% (str(mo), str(today), goal_hours_so_far )
+		
+	r.close()
+	
+	print '(rounding_totals: ', rounding_totals , ' )'
+
+
