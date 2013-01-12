@@ -6,7 +6,7 @@ import re
 from datetime import timedelta
 from time import gmtime, strftime, localtime, mktime
 
-YEAR = 2012
+YEAR = 2013
 
 class Columnify ():
 
