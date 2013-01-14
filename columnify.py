@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
+import settings
+
 import sys
 import math
 import re
 from datetime import timedelta
 from time import gmtime, strftime, localtime, mktime
 
-YEAR = 2013
 
 class Columnify ():
 
@@ -270,7 +271,7 @@ def checkTwentyFour (hours):
 	return total
 
 def weekday(mo,day):
-	b = (YEAR,int(mo),int(day),00,00,00,0,0,0)
+	b = (settings.YEAR,int(mo),int(day),00,00,00,0,0,0)
 	d = localtime(mktime(b))
 	return d.tm_wday
 
@@ -298,6 +299,17 @@ def round_difference (original, rounded):
 		return ("more",-delta)
 
 
+def filter_line(line):
+	for seq in settings.GARBAGE_PREPENDING_SEQUENCES:
+		try:
+			return re.search(seq, line).group(1)
+		except AttributeError:
+			pass
+	else:
+		return line
+
+
+
 
 def parse_timesheet (timesheet):
 	'''Take a timesheet file and spit out a report.
@@ -310,7 +322,7 @@ def parse_timesheet (timesheet):
 	total_hours = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
 	week_total = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
 	rounding_totals = {"more":0, "fewer":0}
-	date_re = re.compile(r"[0-9][0-9]/[0-9][0-9]")
+	date_re = re.compile(r"([0-9][0-9]/[0-9][0-9]).*")
 	hours_re = re.compile(r"[0-9][0-9]:[0-9][0-9]")
 	cor_re = re.compile(r"cor")
 	timesh_re = re.compile(r"(timesheet|time sheet)")	
@@ -319,19 +331,36 @@ def parse_timesheet (timesheet):
 
 	today = int(strftime("%d"))
 
+
+
 	try:
 		f = open(timesheet)
 	except IOError:
 		sys.exit( "can't open " + timesheet ) 
 
-	r = open("report_" + strftime("%m%d%y_%H%M.txt"), "w")
-	r_clean = open("report_clean_" + strftime("%m%d%y_%H%M.txt"), "w")
+	r = open(settings.REPORT_FILE + strftime("%m%d%y_%H%M.txt"), "w")
+	r_clean = open(settings.REPORT_FILE_CLEAN  + strftime("%m%d%y_%H%M.txt"), "w")
+	didntparse = open(settings.DIDNTPARSE_FILE + strftime("%m%d%y_%H%M.txt"), "w")
+
+ 
+
+ 
 
 	
 	lines = f.readlines()
 	batch = ""; mo=""; day=""; n_mo=""; n_day="" ; notes =""
 
+	# should filter out character sequences from lines so that data lines can still be used 
+	lines = map(lambda x:filter_line(x), lines)
+
+
 	for line in lines:
+
+
+		# perform a filter to remove some char sequences appearing in front of date and hour lines
+
+
+
 		if hours_re.match (line) :
 			delta, activity, notes = parseLineWTime (line.split(' ',4))
 		
@@ -353,7 +382,9 @@ def parse_timesheet (timesheet):
 			
 		elif date_re.match(line):
 
-			n_mo, n_day = line.split("/"); n_day = str(int(n_day))
+			n_mo, n_day = date_re.match(line).group(1).split("/"); n_day = str(int(n_day))
+			# print '%s\nfailed with line:%s' % (e,line)
+
 			w = weekday(n_mo,n_day)
 
 			r.write( "\n" + line.strip() +":\n")
@@ -393,14 +424,14 @@ def parse_timesheet (timesheet):
 
 		elif comment_re.match(line):
 			pass
-		elif line == "":
+		elif line == "" or re.match(r'\\$',line):
 			pass
 		else:
-			errout = open("error.log","a")
-			errout.write( strftime("[%m%d%y_%H%M]") + " Warning: not able to parse: \""+ line + "\"") 
-			errout.close()
-
-
+			if hours_re.search(line) or date_re.search(line):
+				errout = open(settings.ERROR_LOG,"a")
+				errout.write( strftime("[%m%d%y_%H%M]") + " Warning: not able to parse: \""+ line + "\"") 
+				errout.close()
+			didntparse.write(line)
 	# display totals...
 	print 'month totals:\n' + displayHours(total_hours)
 
@@ -409,7 +440,30 @@ def parse_timesheet (timesheet):
 					% (str(mo), str(today), goal_hours_so_far )
 		
 	r.close()
+	r_clean.close()
+	didntparse.close()
 	
 	print '(rounding_totals: ', rounding_totals , ' )'
+
+
+	with open(settings.SUMMARY_FILE + strftime("%m%d%y.txt"), "w") as summaryf:
+
+		summaryf.write (
+			'By the end of %s/%s, want to finish about %d hours for this month. \
+			\nAnd month totals are \n%s\n' \
+				% (
+					str(mo), 
+					str(today), 
+					goal_hours_so_far,
+					displayHours(total_hours)
+				)
+		)
+
+
+
+
+
+
+
 
 
