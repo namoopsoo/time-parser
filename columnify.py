@@ -340,7 +340,8 @@ def parse_timesheet (timesheet):
 
 	r = open(settings.REPORT_FILE + strftime("%m%d%y_%H%M.txt"), "w")
 	r_clean = open(settings.REPORT_FILE_CLEAN  + strftime("%m%d%y_%H%M.txt"), "w")
-	didntparse = open(settings.DIDNTPARSE_FILE + strftime("%m%d%y_%H%M.txt"), "w")
+	didntparse_file = settings.DIDNTPARSE_FILE + strftime("%m%d%y_%H%M.txt")
+	didntparse = open(didntparse_file, "w")
 
  
 
@@ -438,6 +439,9 @@ def parse_timesheet (timesheet):
 	goal_hours_so_far = business_days_count * 8
 	print 'By the end of %s/%s, want to finish about %d hours for this month' \
 					% (str(mo), str(today), goal_hours_so_far )
+#					% (str(mo), settings.TIMESHEET_PERIOD_END_DAY, goal_hours_so_far )
+
+
 		
 	r.close()
 	r_clean.close()
@@ -445,8 +449,11 @@ def parse_timesheet (timesheet):
 	
 	print '(rounding_totals: ', rounding_totals , ' )'
 
+	summary_file = settings.SUMMARY_FILE + strftime("%m%d%y.txt")
+	print '\n\n\n\n\n**** ~ **** ~ ****\n!!!!!! REMEMBER TO CHECK %s FOR WHAT DID NOT PARSE\nAnd wrote summary to %s.\n\n\n\n\n\n\n:)' \
+		% (didntparse_file, summary_file)
 
-	with open(settings.SUMMARY_FILE + strftime("%m%d%y.txt"), "w") as summaryf:
+	with open(summary_file, "w") as summaryf:
 
 		summaryf.write (
 			'By the end of %s/%s, want to finish about %d hours for this month. \
@@ -454,6 +461,7 @@ def parse_timesheet (timesheet):
 				% (
 					str(mo), 
 					str(today), 
+#					settings.TIMESHEET_PERIOD_END_DAY, 
 					goal_hours_so_far,
 					displayHours(total_hours)
 				)
