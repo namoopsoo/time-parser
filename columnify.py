@@ -188,7 +188,8 @@ def displayHours (hours):
 	s = "{"
 	for elem in hours:
 
-		s += "%s: %.2f, " % (elem, round_quarter(hours[elem]))
+		# s += "%s: %.2f, " % (elem, round_quarter(hours[elem]))
+		s += "%s: %.2f, " % (elem, hours[elem])
 	s+= "}\n"
 	return s
 
@@ -370,11 +371,13 @@ def parse_timesheet (timesheet):
 			rounding_totals [round_how] += round_diff
 
  			try:
- 				hours[activity] += delta
+ 				# hours[activity] += delta
+ 				hours[activity] += round_quarter (delta)
  			except KeyError:
 				print line.split()
  				sys.exit( "key '" + activity + "' not found, delta:'"+str(delta)+"', line: '"+line+"'")
 
+			# Add some data to the cor report file 
 			if cor_re.match(activity):
 				r.write( str("%.2f" % delta) + "\t" + str(notes) )
 
@@ -393,12 +396,13 @@ def parse_timesheet (timesheet):
 
 			if w is 0:  	
 				batch +=  mo + "/"+ day  + ": " + displayHours(hours)
-				aggregHours(week_total,hours);aggregHours(total_hours,hours);
+				aggregHours(week_total, hours);aggregHours(total_hours, hours);
 
 				deficit = "(cor deficit: " + str(40.0 - week_total["cor"]) + "/40 )\n"
 
 				# week_total["unk"] += checkTwentyFour 
 
+				# Be sure when writing output that use consistent values here. Not rounded ?  
 				sys.stdout.write(displayHours(week_total) + deficit + batch + "\n")
 				mo, day = n_mo, n_day 
 
