@@ -117,6 +117,10 @@ class Columnify ():
 
 		self.datasets[dset_name]	= 	f.read().split("\n")
 
+def _reset_totals(totals):
+	for elem in totals:
+		totals[elem] = 0
+
 def retrieveWord ( orange_data , line_num ) :
 	line = ""
 
@@ -140,7 +144,7 @@ def testClassifier ( classifier , orange_data ) :
 
 
 # prepare timesheet file for training
-def stripTimeFromFile( filename, filename_new) :
+def stripTimeFromFile(filename, filename_new) :
 	try:
 		fin = open ( filename ) 
 		fout = open ( filename_new ,"w") 
@@ -197,73 +201,6 @@ def aggregHours (a ,b):
 	for elem in b:
 		a[elem] += b[elem]
 
-def parseDay ():
-	timesheet = "/Users/michalpiekarczyk/current projects/cortix A098/orange-time_sheet-classification/timesheet data/apr2011.txt" 
-
-	hours=self.d_init
-	total_hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
-	week_total={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
-	date_re = re.compile(r"[0-9][0-9]/[0-9][0-9]")
-	hours_re = re.compile(r"[0-9][0-9]:[0-9][0-9]")
-
-	try:
-		f = open(timesheet)
-	except IOError:
-		sys.exit( "can't open " + timesheet ) 
-	
-	lines = f.readlines()
-	batch = ""; mo=""; day=""
-
-	for line in lines:
-		if line == "":
-			pass
-		elif date_re.match(line):
-
-			total = checkTwentyFour (hours) 
-			# print "total: ", total, ", mo/day: ", mo, "/", day
-
-			if total == 0:
-				mo, day = line.split("/"); day = str(int(day))
-				# print "******changing mo,day to ", mo, "/", day
-				continue
-
-			elif total < 24.0 :
-				hours["unk"] += 24.0 - float(total)
-
-			batch += "%s/%s: " % (mo,day)
-			batch += displayHours (hours)
-			for elem in hours:
-				total_hours[elem] += hours[elem]
-				week_total[elem] += hours[elem]
-
-			if weekday(mo,day) is 6:  	
-				# its Sunday
-				batch = displayHours (week_total) + batch + "\n"
-				week_total={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
-				sys.stdout.write(batch)
-				batch = ""
-
-			# print "&&&&&&&&&setting hours to 0"
-			hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
-
-			mo, day = line.split("/"); day = str(int(day))
-			# print "******changing mo,day to ", mo, "/", day
-
-		elif hours_re.match ( line ) :
-
-			delta, activity = parseLineWTime (line.split())
-	
-			try:
-				hours[activity] += delta
-			except KeyError:
-				sys.exit( "key " + activity + " not found")
-		else:
-			errout = open("error.log","a")
-			errout.write( strftime("[%m%d%y_%H%Ma]") + " Warning: not able to parse: \""+ line + "\"") 
-			errout.close()
-
-	print "totals: (", checkTwentyFour(total_hours), ")"
-	displayHours(total_hours)
 
 def checkTwentyFour (hours):
 	total=0.0
@@ -406,8 +343,8 @@ def parse_timesheet (timesheet):
 				sys.stdout.write(displayHours(week_total) + deficit + batch + "\n")
 				mo, day = n_mo, n_day 
 
-				batch = "";week_total={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
-				hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+				batch = "";_reset_totals(week_total)
+				_reset_totals(hours)
 
 				if int(day) <= today:
 					business_days_count += 1
@@ -417,7 +354,7 @@ def parse_timesheet (timesheet):
 
 				batch +=  mo + "/"+ day  + ": " + displayHours(hours)
 				mo, day = n_mo, n_day 
-				hours={"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+				_reset_totals(hours)
 
 				# if Tue, Wed, Thu, Fri
 				if w in [1,2,3,4] and int(day) <= today:
