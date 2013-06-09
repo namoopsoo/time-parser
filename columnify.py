@@ -7,6 +7,7 @@ import math
 import re
 from datetime import timedelta
 from time import gmtime, strftime, localtime, mktime
+from collections import OrderedDict
 
 
 class Columnify ():
@@ -15,7 +16,7 @@ class Columnify ():
 
 	def __init__ (self, cols=[],filename  ="" ):
 
-		self.d_init = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+		self.d_init = {"unk":0, "cor":0, "corbiz":0, "corover":0, "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
 
 
 		if filename   != "":
@@ -162,7 +163,9 @@ def parseLineWTime ( tupl ):
 
 		Use the following category abbreviations
 		cor : cortix work
-		cor : cortix business development hours
+		corbiz : cortix business development hours
+		, "corover":0 overtime
+		, "coruserollover":0
 		fun : fun , e.g. with friends, entertainment
 		prj : other projects besides cortix
 		sup : supportive , e.g. sleep, cleaning, transport
@@ -189,13 +192,10 @@ def parseLineWTime ( tupl ):
 	return delta.seconds / (3600.0) , activity, notes
 
 def displayHours (hours):
-	s = "{"
-	for elem in hours:
-
-		# s += "%s: %.2f, " % (elem, round_quarter(hours[elem]))
-		s += "%s: %.2f, " % (elem, hours[elem])
-	s+= "}\n"
-	return s
+	return "{%s}\n" % \
+		reduce(lambda x, y: x + y, 
+				["%s: %.2f, " % (elem, hours[elem]) for elem in hours] 
+		)
 
 def aggregHours (a ,b):
 	for elem in b:
@@ -256,9 +256,9 @@ def parse_timesheet (timesheet):
 	Also creates a report with work comments per day.
 	'''
 
-	hours = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
-	total_hours = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
-	week_total = {"unk":0, "cor":0, "corbiz":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0}
+	hours = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
+	total_hours = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
+	week_total = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
 	rounding_totals = {"more":0, "fewer":0}
 	date_re = re.compile(r"([0-9][0-9]/[0-9][0-9]).*")
 	hours_re = re.compile(r"[0-9][0-9]:[0-9][0-9]")
@@ -266,7 +266,14 @@ def parse_timesheet (timesheet):
 	timesh_re = re.compile(r"(timesheet|time sheet)")	
 	comment_re = re.compile(r"^#")	
 	business_days_count = 0
+	cortix_output = ''
+	vac_output = ''
+	userollover_output = ''
+	cortix_hours = OrderedDict() ; cortix_hours_file = settings.CORTIX_REPORT_FILE + strftime("%m%d%y_%H%M.csv")
+	vac_hours = OrderedDict() 
 
+	use_rollover_cortix_hours = OrderedDict()
+ 
 	today = int(strftime("%d"))
 
 
@@ -331,9 +338,19 @@ def parse_timesheet (timesheet):
 			r.write( "\n" + line.strip() +":\n")
 			r_clean.write( "\n" + line.strip() +":\n")
 
+			cortix_output += "(%s/%s) %s, " % (mo, day, hours['cor'])
+			vac_output += "(%s/%s) %s, " % (mo, day, hours['vac'])
+			userollover_output += "(%s/%s) %s, " % (mo, day, hours['coruserollover'])
+			cortix_hours["%s/%s"%(mo,day)] = hours['cor']
+			vac_hours["%s/%s"%(mo,day)] = hours['vac']
+			use_rollover_cortix_hours["%s/%s"%(mo,day)] = hours['coruserollover']
+
 			if w is 0:  	
 				batch +=  mo + "/"+ day  + ": " + displayHours(hours)
 				aggregHours(week_total, hours);aggregHours(total_hours, hours);
+				cortix_output += "\n"
+				vac_output += "\n"
+				userollover_output += "\n"
 
 				deficit = "(cor deficit: " + str(40.0 - week_total["cor"]) + "/40 )\n"
 
@@ -387,8 +404,32 @@ def parse_timesheet (timesheet):
 	r.close()
 	r_clean.close()
 	didntparse.close()
+
+	def real_hour(_h):
+		translation = {0:'00', 25:'15', 5: '30', 75:'45'}
+		try:
+			main, fraction = str(_h).split('.')
+		except ValueError:
+			main = str(_h) ; fraction = '0'
+		
+		return '%s:%s' % (main, translation[int(fraction)])
 	
 	print '(rounding_totals: ', rounding_totals , ' )'
+
+	print 'cortix hours summary:\n%s' % cortix_output 
+	#print 'cortix_hours : \n%s' % cortix_hours
+
+	print 'vac hours summary:\n%s' % vac_output 
+	print 'cortix using rollover hours summary:\n%s' % userollover_output 
+
+	with open(cortix_hours_file, 'w') as cortxf:
+		cortxf.write('type,' + reduce(lambda x,y: x+','+y, cortix_hours.keys()) + '\n')
+		cortxf.write('cor,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in cortix_hours.values()]) + '\n')
+		cortxf.write('vac,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in vac_hours.values()]) + '\n')
+		cortxf.write('use_rollover,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in use_rollover_cortix_hours.values()]))
+
+
+
 
 	summary_file = settings.SUMMARY_FILE + strftime("%m%d%y.txt")
 	print '\n\n\n\n\n**** ~ **** ~ ****\n!!!!!! REMEMBER TO CHECK %s FOR WHAT DID NOT PARSE\nAnd wrote summary to %s.\n\n\n\n\n\n\n:)' \
