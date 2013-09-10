@@ -441,13 +441,19 @@ def parse_timesheet (parameters):
 		parameters['month'], parameters['start_day'], parameters['end_day']
 	)
 
-	pdb.set_trace()
+	#pdb.set_trace()
 
 
 	# Write out Hours into a CSV file
 	with open(cortix_hours_file, 'w') as cortxf:
-		cortxf.write('type,' + reduce(lambda x,y: x+','+y, cortix_hours.keys()) + '\n')
-		cortxf.write('cor,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in cortix_hours.values()]) + '\n')
+		cortxf.write('type,' + reduce(lambda x,y: x+','+y, output_keys) + '\n')
+		cortxf.write('cor,' + 
+				reduce(lambda x,y: str(x)+','+str(y), [
+						real_hour(cortix_hours[_hour]) 
+						for _hour in output_keys if _hour in cortix_hours
+				]) + '\n'
+		)
+
 		cortxf.write('corbiz,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in corbiz_hours.values()]) + '\n')
 
 		cortxf.write('vac,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in vac_hours.values()]) + '\n')
