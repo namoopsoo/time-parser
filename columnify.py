@@ -2,6 +2,7 @@
 
 import settings
 
+import pdb
 import sys
 import math
 import re
@@ -16,7 +17,7 @@ class Columnify ():
 
 	def __init__ (self, cols=[],filename  ="" ):
 
-		self.d_init = {"unk":0, "cor":0, "corbiz":0, "corover":0, "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
+		self.d_init = {"unk":0, "cor":0, "corbiz":0, "corover":0, "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0, "corsick":0}
 
 
 		if filename   != "":
@@ -166,6 +167,7 @@ def parseLineWTime ( tupl ):
 		corbiz : cortix business development hours
 		, "corover":0 overtime
 		, "coruserollover":0
+		corsick : cor sick time
 		fun : fun , e.g. with friends, entertainment
 		prj : other projects besides cortix
 		sup : supportive , e.g. sleep, cleaning, transport
@@ -246,19 +248,23 @@ def filter_line(line):
 	else:
 		return line
 
+def generate_output_keys(month, start_day, end_day):
 
+	keys_ = []
+	for day in range(int(start_day), int(end_day) + 1):
+		keys_.append("%02d/%02d" % (int(month), day))
+	return keys_
 
-
-def parse_timesheet (timesheet):
+def parse_timesheet (parameters):
 	'''Take a timesheet file and spit out a report.
 
 	Produces project hours breakdown per day and weekly aggregation. 
 	Also creates a report with work comments per day.
 	'''
 
-	hours = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
-	total_hours = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
-	week_total = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0}
+	hours = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0, "corsick":0}
+	total_hours = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0, "corsick":0}
+	week_total = {"unk":0, "cor":0, "corbiz":0, "corover":0,  "sup":0, "fun":0, "prj":0,"gym":0, "red":0, "fin":0, "pgm":0, "hol":0, "vac":0, "coruserollover":0, "corsick":0}
 	rounding_totals = {"more":0, "fewer":0}
 	date_re = re.compile(r"([0-9][0-9]/[0-9][0-9]).*")
 	hours_re = re.compile(r"[0-9][0-9]:[0-9][0-9]")
@@ -270,7 +276,9 @@ def parse_timesheet (timesheet):
 	vac_output = ''
 	userollover_output = ''
 	cortix_hours = OrderedDict() ; cortix_hours_file = settings.CORTIX_REPORT_FILE + strftime("%m%d%y_%H%M.csv")
+	corbiz_hours = OrderedDict()
 	vac_hours = OrderedDict() 
+	sick_hours = OrderedDict() 
 
 	use_rollover_cortix_hours = OrderedDict()
  
@@ -279,9 +287,9 @@ def parse_timesheet (timesheet):
 
 
 	try:
-		f = open(timesheet)
+		f = open(parameters['timesheet'])
 	except IOError:
-		sys.exit( "can't open " + timesheet ) 
+		sys.exit( "can't open " + parameters['timesheet'] ) 
 
 	r = open(settings.REPORT_FILE + strftime("%m%d%y_%H%M.txt"), "w")
 	r_clean = open(settings.REPORT_FILE_CLEAN  + strftime("%m%d%y_%H%M.txt"), "w")
@@ -342,7 +350,9 @@ def parse_timesheet (timesheet):
 			vac_output += "(%s/%s) %s, " % (mo, day, hours['vac'])
 			userollover_output += "(%s/%s) %s, " % (mo, day, hours['coruserollover'])
 			cortix_hours["%s/%s"%(mo,day)] = hours['cor']
+			corbiz_hours["%s/%s"%(mo,day)] = hours['corbiz']
 			vac_hours["%s/%s"%(mo,day)] = hours['vac']
+			sick_hours["%s/%s"%(mo,day)] = hours['corsick']
 			use_rollover_cortix_hours["%s/%s"%(mo,day)] = hours['coruserollover']
 
 			if w is 0:  	
@@ -393,6 +403,9 @@ def parse_timesheet (timesheet):
 			didntparse.write(line)
 	# display totals...
 	print 'month totals:\n' + displayHours(total_hours)
+	sum_total = sum([total_hours['cor'], total_hours['corbiz'], total_hours['vac'], total_hours['corsick'], total_hours['hol'], total_hours['coruserollover']])
+	sum_total_text = 'sum total: cor(%s) + corbiz(%s) + vac(%s) + sick(%s) + hol(%s) + coruserollover(%s) = %s\n' % (total_hours['cor'], total_hours['corbiz'], total_hours['vac'], total_hours['corsick'], total_hours['hol'], total_hours['coruserollover'], sum_total)
+	print sum_total_text
 
 	goal_hours_so_far = business_days_count * 8
 	print 'By the end of %s/%s, want to finish about %d hours for this month' \
@@ -422,10 +435,23 @@ def parse_timesheet (timesheet):
 	print 'vac hours summary:\n%s' % vac_output 
 	print 'cortix using rollover hours summary:\n%s' % userollover_output 
 
+
+	# Generate expected keys 
+	output_keys = generate_output_keys(
+		parameters['month'], parameters['start_day'], parameters['end_day']
+	)
+
+	pdb.set_trace()
+
+
+	# Write out Hours into a CSV file
 	with open(cortix_hours_file, 'w') as cortxf:
 		cortxf.write('type,' + reduce(lambda x,y: x+','+y, cortix_hours.keys()) + '\n')
 		cortxf.write('cor,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in cortix_hours.values()]) + '\n')
+		cortxf.write('corbiz,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in corbiz_hours.values()]) + '\n')
+
 		cortxf.write('vac,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in vac_hours.values()]) + '\n')
+		cortxf.write('sick,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in sick_hours.values()]) + '\n')
 		cortxf.write('use_rollover,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in use_rollover_cortix_hours.values()]))
 
 
@@ -448,6 +474,17 @@ def parse_timesheet (timesheet):
 					displayHours(total_hours)
 				)
 		)
+
+		summaryf.write ( 
+			sum_total_text + \
+			'\n(rounding_totals: %s)\n'% rounding_totals  + \
+			'cortix hours summary:\n%s' % cortix_output + \
+			'vac hours summary:\n%s' % vac_output + \
+			'cortix using rollover hours summary:\n%s' % userollover_output 
+		)
+
+
+
 
 
 
