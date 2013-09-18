@@ -349,7 +349,10 @@ def parse_timesheet (parameters):
 			cortix_output += "(%s/%s) %s, " % (mo, day, hours['cor'])
 			vac_output += "(%s/%s) %s, " % (mo, day, hours['vac'])
 			userollover_output += "(%s/%s) %s, " % (mo, day, hours['coruserollover'])
-			cortix_hours["%s/%s"%(mo,day)] = hours['cor']
+			try:
+				cortix_hours["%02d/%02d"%(int(mo),int(day))] = hours['cor']
+			except ValueError:
+				pass
 			corbiz_hours["%s/%s"%(mo,day)] = hours['corbiz']
 			vac_hours["%s/%s"%(mo,day)] = hours['vac']
 			sick_hours["%s/%s"%(mo,day)] = hours['corsick']
@@ -449,8 +452,9 @@ def parse_timesheet (parameters):
 		cortxf.write('type,' + reduce(lambda x,y: x+','+y, output_keys) + '\n')
 		cortxf.write('cor,' + 
 				reduce(lambda x,y: str(x)+','+str(y), [
-						real_hour(cortix_hours[_hour]) 
-						for _hour in output_keys if _hour in cortix_hours
+						real_hour(cortix_hours[_hour]) if _hour in cortix_hours
+						else "0:00"
+						for _hour in output_keys 
 				]) + '\n'
 		)
 
