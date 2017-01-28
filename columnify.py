@@ -339,6 +339,7 @@ def parse_timesheet (parameters):
 		elif date_re.match(line):
 
 			n_mo, n_day = date_re.match(line).group(1).split("/"); n_day = str(int(n_day))
+			# assert int(n_mo) == int(parameters['month'])
 			# print '%s\nfailed with line:%s' % (e,line)
 
 			w = weekday(n_mo,n_day)
@@ -465,9 +466,18 @@ def parse_timesheet (parameters):
 		cortxf.write('use_rollover,' + reduce(lambda x,y: str(x)+','+str(y), [real_hour(_hour) for _hour in use_rollover_cortix_hours.values()]))
 
 
+	if	int(parameters['start_day']) == 1:
+		file_label = '1'
+	else:
+		file_label = '2'
+
+	summary_file = '%s_%s.%s.%s_edit.%s' % (settings.SUMMARY_FILE, 
+								parameters['month'],
+								file_label,
+								settings.YEAR,
+								strftime("%m%d%y_%H%M.txt"))
 
 
-	summary_file = settings.SUMMARY_FILE + strftime("%m%d%y.txt")
 	print '\n\n\n\n\n**** ~ **** ~ ****\n!!!!!! REMEMBER TO CHECK %s FOR WHAT DID NOT PARSE\nAnd wrote summary to %s.\n\n\n\n\n\n\n:)' \
 		% (didntparse_file, summary_file)
 

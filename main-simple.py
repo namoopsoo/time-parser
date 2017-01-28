@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
 import columnify
-import sys
 import lines_validate
-
+import pdb
+import sys
 
 # delta, catgry = columnify.parseLineWTime(line2.split()) 
 # print "below line has length " , delta , " for category  " , catgry
@@ -12,10 +12,19 @@ import lines_validate
 # sys.exit()
 # columnify.parseDay()
 
-timesheet = "/Users/michal/Documents/timesheet parser/timesheet data/dec.1.2012.txt"
 
-lines_validate.validate_lines(timesheet)
 
-columnify.parse_timesheet(timesheet)
+# Previous nvalt storage: 
+# 'timesheet' : "/Volumes/untitled/Notational Data/times sep-2-2013.rtf" ,
 
+parameters =  { 
+	'timesheet' : "timesheet data/may.2.2014.txt",
+	'month' : 5 ,
+	'start_day' : 16,
+	'end_day' : 31 
+}
+
+lines_validate.validate_lines(parameters['timesheet'])
+
+columnify.parse_timesheet(parameters)
 
