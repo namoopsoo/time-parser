@@ -49,6 +49,45 @@
   
   )
 
+(defn make-time-vec-to-put-dic
+  "Take a vector of attributes and prepare a dict.
+  Also incorporate the date."
+  [vect date]
+
+  ; at this point may need to limit to only length 4 ? 
+  ; (let [[time-vect core-category project-identifier sub-category note] vect]
+  (let [
+        [time-vect core-category project-identifier sub-category note] vect
+
+        [start-time end-time] (strlib/split time-vect #"-")
+
+        v {:start-time start-time :end-time end-time
+               :date date :core-category core-category
+               :sub-category sub-category :project-identifier project-identifier}
+        ]
+    v
+
+       ;(println start-time "," end-time "," core-category "," project-identifier
+       ;     "," sub-category ","  ".")
+
+       )
+  )
+
+
+;    (apply merge '(
+;                   {}
+;                   {:core_category }
+;                   {}))
+;    )
+
+  ;(if ((count vect) 5)
+    ; 14:05 - 14:55 ; work    ; consulting               ; eng support 
+    ; 18:25 - 19:25 ; work    ; github-lms-platform-1151 ; code 
+    ; 14:10 - 16:50 ; work    ; BE-427                   ; QA 
+    ; 19:50 - 20:00 ; personal; time capture project     ; code 
+    ; time_start - time_end ; core_category ; project_identifier ; sub_category ; notes
+    ; discussion: (can often get into random discussions)
+
 (defn one.core.taketime
   "Take input time string and return parsed dictionary or fail. 
   The input is an array of dicts. The output should be helpful to say
