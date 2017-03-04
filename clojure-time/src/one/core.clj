@@ -42,12 +42,26 @@
       (json/generate-stream result w)
       (log/info "Lambda finished"))))
 
+(defn vec-strange-trime-them
+  "Take a vector of strings and for each, split by ;"
+  [vect]
+  (map (fn [x] (clojure.string/trim x)) vect)
+  
+  )
+
+
 (defn parse-time-input
   "Take a vector of strings and for each, split by ;"
   [vect]
-  (map (fn [x] (strlib/split x #";")) vect)
+  (
+   map vec-strange-trime-them
+
+   (map (fn [x] (strlib/split x #";")) vect)
+
+  )
   
   )
+
 
 ; (defn   ; boot.user=> (clojure.string/trim " a sdfd ")
 
