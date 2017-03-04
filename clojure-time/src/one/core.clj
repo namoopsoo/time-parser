@@ -63,24 +63,20 @@
   )
 
 
-; (defn   ; boot.user=> (clojure.string/trim " a sdfd ")
-
 (defn make-time-vec-to-put-dic
   "Take a vector of attributes and prepare a dict.
   Also incorporate the date.
- 
-  TODO : strip out the white space.
 
   TODO: also, decide, should have a special project-identifier like 'adhoc',
       for doing things that don't really have a project. That would be way
       simpler than trying to handle both kinds of cases.
   "
-  [vect date]
+  [vect]
 
   ; at this point may need to limit to only length 4 ? 
   ; (let [[time-vect core-category project-identifier sub-category note] vect]
   (let [
-        [time-vect core-category project-identifier sub-category note] vect
+        [date time-vect core-category project-identifier sub-category note] vect
 
         [start-time end-time] (strlib/split time-vect #"-")
 
@@ -130,17 +126,21 @@
   The input is an array of dicts. The output should be helpful to say
   which dicts were successfully used and show useful errors for which werent
   
-  Also need dates for each array of dicts. 
+  in: array, like, ['blah;blah;blah;blah', 'blah;blah;blah',...]
+
+  (  get-hash-es   in ..)   then do an insert for each hash.
   "
   [in]
   (let [
-        result (parse-time-input in)
+        time-vectors (parse-time-input in)   
         
-        
-        
-        
+        ; then make hashes from each one
+        time-hashes (map make-time-vec-to-put-dic time-vectors)
         ]
-    result 
+
+    ; then insert them all
+    (db/batch-write-times time-hashes)
+
      )
   )
 
