@@ -49,9 +49,18 @@
   
   )
 
+; (defn   ; boot.user=> (clojure.string/trim " a sdfd ")
+
 (defn make-time-vec-to-put-dic
   "Take a vector of attributes and prepare a dict.
-  Also incorporate the date."
+  Also incorporate the date.
+ 
+  TODO : strip out the white space.
+
+  TODO: also, decide, should have a special project-identifier like 'adhoc',
+      for doing things that don't really have a project. That would be way
+      simpler than trying to handle both kinds of cases.
+  "
   [vect date]
 
   ; at this point may need to limit to only length 4 ? 
@@ -105,10 +114,18 @@
 (defn one.core.taketime-non-stream
   "Take input time string and return parsed dictionary or fail. 
   The input is an array of dicts. The output should be helpful to say
-  which dicts were successfully used and show useful errors for which werent"
+  which dicts were successfully used and show useful errors for which werent
+  
+  Also need dates for each array of dicts. 
+  "
   [in]
   (let [
-        result (parse-time-input in)]
+        result (parse-time-input in)
+        
+        
+        
+        
+        ]
     result 
      )
   )

@@ -38,6 +38,15 @@
        (apply sorted-set)
        vec))
 
+(defn batch-write-times
+  "Write many rows."
+  [items]
+  (dynamo/batch-write-item client-config
+                           {table-name {
+                                        :put items}
+                            })
+  )
+
 (defn get-prime
   "Get a specific prime from our list"
   [index]
@@ -52,11 +61,19 @@
 
 ; table one: projects
 
-#_(dynamo/create-table client-config :projects
+#_(dynamo/create-table db/client-config :projects
                        [:index :s]  ;  what kind of index , string? 
                        {:throughput {:read 5 :write 5}
                         :block? true})
 
+#_(dynamo/create-table db/client-config :times
+                       [:index :n]  ;  what kind of index , string? 
+                       {:throughput {:read 5 :write 5}
+                        :block? true})
 
+#_(dynamo/create-table db/client-config :summary
+                       [:index :n]  ;  what kind of index , string? 
+                       {:throughput {:read 5 :write 5}
+                        :block? true})
 
 
