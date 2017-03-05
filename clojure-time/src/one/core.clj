@@ -88,8 +88,8 @@
 
         index-date (c/to-long (f/parse date-formatter (str date "T" start-time)))
         end-date (c/to-long (f/parse date-formatter (str date "T" end-time)))
-        time-length-seconds (- end-date index-date)
-        time-length (/ time-length-seconds 60000)
+        time-length-miliseconds (- end-date index-date)
+        time-length (/ time-length-miliseconds 60000) ; minutes
 
         ; TODO verify that t1 < t2... 
         ;   if not, then send error...
@@ -152,11 +152,25 @@
         time-vectors (parse-time-input in)   
         
         ; then make hashes from each one
-        time-hashes (map make-time-vec-to-put-dic time-vectors)
+        time-hashes-res (
+                     try {:stat true :output (map make-time-vec-to-put-dic time-vectors)}
+                     (catch java.lang.IllegalArgumentException ex
+                       {:stat false :err (str "Error " (.getMessage ex))}
+                       )
+                     
+                     )
+
+        ; if time-hashes is false, we return an error.
         ]
 
     ; then insert them all
-    (db/batch-write-times time-hashes)
+    (if (time-hashes-res :stat)
+
+      ; all good
+      (db/batch-write-times time-hashes)
+
+      ; else
+      (println (str "Failed" (time-hashes-res :err))))
 
      )
   )
