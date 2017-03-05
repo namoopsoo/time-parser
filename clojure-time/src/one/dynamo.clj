@@ -18,7 +18,7 @@
     )
 )
 
-(def table-name :primes)
+(def table-name :times)
 
 (defn put-prime
   "Place a single prime into our list"
@@ -39,11 +39,13 @@
        vec))
 
 (defn batch-write-times
-  "Write many rows."
+  "Write many hashes, each as a new row."
   [items]
   (dynamo/batch-write-item client-config
-                           {table-name {
-                                        :put items}
+                           {:times {
+                                    :put items
+                                    :delete []
+                                    }
                             })
   )
 

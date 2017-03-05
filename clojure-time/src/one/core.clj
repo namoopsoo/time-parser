@@ -7,6 +7,10 @@
     [clojure.java.io :as io]
     ;[clojure.string :only (split triml)] 
     [clojure.string :as strlib]
+
+    [clj-time.core :as t]
+    [clj-time.format :as f]
+    [clj-time.coerce :as c]
     ))
 
 (defn sieve-of-eratosthenes
@@ -78,11 +82,24 @@
   (let [
         [date time-vect core-category project-identifier sub-category note] vect
 
-        [start-time end-time] (strlib/split time-vect #"-")
+        [start-time end-time] (map clojure.string/trim (strlib/split time-vect #"-"))
 
-        v {:start-time start-time :end-time end-time
+        date-formatter (f/formatters :date-hour-minute)
+
+        index-date (c/to-long (f/parse date-formatter (str date "T" start-time)))
+        end-date (c/to-long (f/parse date-formatter (str date "T" end-time)))
+        time-length-seconds (- end-date index-date)
+        time-length (/ time-length-seconds 60000)
+
+        ; TODO verify that t1 < t2... 
+        ;   if not, then send error...
+
+        v {
+           :index index-date
+           :start-time start-time :end-time end-time
                :date date :core-category core-category
-               :sub-category sub-category :project-identifier project-identifier}
+               :sub-category sub-category :project-identifier project-identifier
+           :time-length time-length}
         ]
     v
 
