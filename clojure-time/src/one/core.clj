@@ -167,10 +167,10 @@
     (if (time-hashes-res :stat)
 
       ; all good
-      (db/batch-write-times time-hashes)
+      (db/batch-write-times (time-hashes-res :output))
 
       ; else
-      (println (str "Failed" (time-hashes-res :err))))
+      (println (str "Failed, because, " (time-hashes-res :err))))
 
      )
   )
