@@ -49,6 +49,21 @@
                             })
   )
 
+
+(defn get-times-for-date-range
+  [start-date end-date]
+
+  (
+   dynamo/scan client-config :times {
+                                    ;
+                                    :attr-conds {
+                                                 :date [
+                                                        :between  [start-date
+                                                                   end-date]
+                                                        ]}})
+  
+  )
+
 (defn get-prime
   "Get a specific prime from our list"
   [index]

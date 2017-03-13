@@ -176,5 +176,18 @@
   )
 
 
+(defn one.core.summarize-time
+  "take a time start and stop (range) and read what is there,
+  and write to the summary table for all of the project
+  and subcategory combinations "
+  [start-date end-date]
+  (let [
+        query-times ""
+        time-data (db/get-times-for-date-range start-date end-date)
+        all-times-lengths (map (fn [x] (x :time-length)) time-data)
+        all-sum (reduce + all-times-lengths)
+        ]
+    all-sum)
+  )
 
 
