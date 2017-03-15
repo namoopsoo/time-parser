@@ -176,6 +176,12 @@
   )
 
 
+; Every end of day: run summarize-time for that day, to see how that prior day was used 
+; Every end of week: run summarize-time fpr that week, , to look at prior week
+; Every end of month: run summarize-time fpr that month, to look at how that prior month was used.
+; 
+
+
 (defn one.core.summarize-time
   "take a time start and stop (range) and read what is there,
   and write to the summary table for all of the project
@@ -186,6 +192,38 @@
         time-data (db/get-times-for-date-range start-date end-date)
         all-times-lengths (map (fn [x] (x :time-length)) time-data)
         all-sum (reduce + all-times-lengths)
+
+        ;project-identifiers (map (fn [x] (x :project-identifier)) time-data)
+        core-categories (set (map (fn [x] (x :core-category)) time-data))
+
+
+        ; DateRange - CoreCategory - TimeLengthSum
+        summary-core-categories (map (fn [y] 
+               {:core-category y :time-length (reduce + (map (fn [z] (z :time-length)) (filter (fn [x] (= (x :core-category) y) ) time-data)))}
+               )
+             core-categories)
+
+
+        ; DateRange - CoreCategory - ProjectIdentifier - TimeLengthSum
+        group-core-cat-and-projects (map (fn [h] 
+                                           (merge {:project-identifier (h :project-identifier)}
+                                                  {:sub-category (h  :sub-category)}
+                                                  )
+                                           
+                                           ) time-data)
+
+        summaries (conj [] summary-core-categories)
+               
+
+        ; DateRange - CoreCategory - ProjectIdentifier - SubCategory - TimeLengthSum
+        ; DateRange - CoreCategory - SubCategory - TimeLengthSum
+        ; SummaryType ( day, week, month, year)
+
+
+        ; add an entry to projects for any new projects?
+        ;   maybe not necessary, since the summary table will show the data.
+        ;   or actually: thats written to at a different time, to describe projects,
+        ;   per project identifier.
         ]
     all-sum)
   )
