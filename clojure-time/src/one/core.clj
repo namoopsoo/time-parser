@@ -195,7 +195,7 @@
   
   "
   [start-date end-date keywords]
-  (str start-date "." end-date
+  (str start-date "." end-date "."
        (combine-summary-keywords keywords)
        )
   )
@@ -214,10 +214,20 @@
           {:time-length (apply + (map (fn [x] (x :time-length)) vs))}
 
           ; New index.
-          {:index  (make-summary-index start-date end-date keywords)}
+          {:index  (make-summary-index start-date end-date
+                                       ; core-category - project-identifier - sub-category 
+                                       [
+                                         (:core-category k "")
+                                         (:project-identifier k "")
+                                         (:sub-category k "")
+                                            ]
+                                       )}
 
           ; Type of summary.
           {:type (combine-summary-keywords keywords)}
+
+          ; Time range. This will be important for querying.
+          {:start-date start-date :end-date end-date}
 
           ; Specific values of those keywords representing this summary.
           k
@@ -237,10 +247,10 @@
 ; 
 
 
-(defn one.core.summarize-time
+(defn summarize-time
   "take a time start and stop (range) and read what is there,
-  and write to the summary table for all of the project
-  and subcategory combinations "
+  and find, for all of the project and subcategory combinations,
+  the time length aggregations."
   [start-date end-date]
   (let [
         query-times ""
@@ -265,7 +275,7 @@
                                           time-data 
                                           start-date end-date
                                           [:core-category :project-identifier])
-        
+
         ; DateRange - CoreCategory - ProjectIdentifier - SubCategory - TimeLengthSum
         summaries-core-cat-projects-sub-cat (summarize-data-per-keys
                                               time-data 
@@ -279,9 +289,9 @@
 
         ; do..
         summaries (concat summary-core-categories
-                        summaries-core-cat-and-projects
-                        summaries-core-cat-projects-sub-cat
-                        )
+                          summaries-core-cat-and-projects
+                          summaries-core-cat-projects-sub-cat
+                          )
 
 
         ; add an entry to projects for any new projects?
@@ -289,11 +299,23 @@
         ;   or actually: thats written to at a different time, to describe projects,
         ;   per project identifier.
         ]
-
     summaries
-    ; Finally, write the summaries to the summaries table.
-    ; May need to deal with how to over-write? Is over-writing free?
     )
   )
 
+
+(defn one.core.summarize-time-and-write
+  "take a time start and stop (range) and read what is there,
+  and write to the summary table for all of the project
+  and subcategory combinations "
+  [start-date end-date]
+  (let [
+        summaries (summarize-time start-date end-date)]
+
+    ; Finally, write the summaries to the summaries table.
+    ; May need to deal with how to over-write? Is over-writing free?
+    (db/batch-write-summaries summaries)
+
+    )
+  )
 

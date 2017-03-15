@@ -76,6 +76,22 @@
   
   )
 
+(defn get-summaries
+  [start-date end-date summary-type]
+
+  (
+   dynamo/scan client-config :summary {
+                                       ;
+                                       :attr-conds {
+                                                    :start-date [:eq start-date]
+                                                    :end-date [:eq end-date]
+                                                    :type [:eq summary-type]
+                                                    }
+                                       })
+
+  )
+
+
 (defn get-prime
   "Get a specific prime from our list"
   [index]
