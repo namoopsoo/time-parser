@@ -50,6 +50,18 @@
   )
 
 
+(defn batch-write-summaries
+  "Write many summaries, each as a new row."
+  [items]
+  (dynamo/batch-write-item client-config
+                           {:summary {
+                                    :put items
+                                    :delete []
+                                    }
+                            })
+  )
+
+
 (defn get-times-for-date-range
   [start-date end-date]
 
@@ -79,17 +91,20 @@
 ; table one: projects
 
 #_(dynamo/create-table db/client-config :projects
-                       [:index :s]  ;  what kind of index , string? 
+                       [:index :s]  ; index: project id
                        {:throughput {:read 5 :write 5}
                         :block? true})
 
 #_(dynamo/create-table db/client-config :times
-                       [:index :n]  ;  what kind of index , string? 
+                       [:index :n]  ; index: unix time of start of an event
+                                    ; , since no two events can start at same time.
                        {:throughput {:read 5 :write 5}
                         :block? true})
 
 #_(dynamo/create-table db/client-config :summary
-                       [:index :n]  ;  what kind of index , string? 
+                       [:index :s]  ; index: combination of start time and summary type.
+                                    ; , because we can have as many summaries which
+                                    ; , start at same time as there are kinds.
                        {:throughput {:read 5 :write 5}
                         :block? true})
 

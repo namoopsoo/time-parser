@@ -175,8 +175,34 @@
      )
   )
 
+
+(defn combine-summary-keywords
+  [keywords]
+  (apply str  (map (fn [x] (str x)) keywords))
+  )
+
+
+(defn make-summary-index
+  "A summary entry is uniquely identified by, the range
+  that it describes and the keywords used to do the summarizing.
+  
+  There may need to be a preservation of the original ordering 
+  of those keywords:
+ 
+  core-category - project-identifier - sub-category 
+
+  Also, do we want the index to contain the summary length, to make it easier?
+  
+  "
+  [start-date end-date keywords]
+  (str start-date "." end-date
+       (combine-summary-keywords keywords)
+       )
+  )
+
+
 (defn summarize-data-per-keys
-  [time-data keywords]
+  [time-data start-date end-date keywords]
   
   (
    map (
@@ -184,7 +210,19 @@
         [[k vs]]
 
         ; Add (+) up all the time-length's per each group.
-        [k (apply + (map (fn [x] (x :time-length)) vs))])
+        (merge
+          {:time-length (apply + (map (fn [x] (x :time-length)) vs))}
+
+          ; New index.
+          {:index  (make-summary-index start-date end-date keywords)}
+
+          ; Type of summary.
+          {:type (combine-summary-keywords keywords)}
+
+          ; Specific values of those keywords representing this summary.
+          k
+          )
+        )
    (group-by
      #(select-keys % keywords)
      time-data))
@@ -214,27 +252,33 @@
         ; core-categories (set (map (fn [x] (x :core-category)) time-data))
 
         ; DateRange - CoreCategory - TimeLengthSum
-        summary-core-categories (summarize-data-per-keys time-data 
-                                          [:core-category])
+        summary-core-categories (summarize-data-per-keys
+                                  time-data
+                                  start-date end-date
+                                  [:core-category])
 
         ; (map (fn [y] {:core-category y :time-length (reduce + (map (fn [z] (z :time-length)) (filter (fn [x] (= (x :core-category) y) ) time-data)))}) core-categories)
 
 
         ; DateRange - CoreCategory - ProjectIdentifier - TimeLengthSum
-        summaries-core-cat-and-projects (summarize-data-per-keys time-data 
+        summaries-core-cat-and-projects (summarize-data-per-keys
+                                          time-data 
+                                          start-date end-date
                                           [:core-category :project-identifier])
         
         ; DateRange - CoreCategory - ProjectIdentifier - SubCategory - TimeLengthSum
-        summaries-core-cat-projects-sub-cat (summarize-data-per-keys time-data 
-                                          [:core-category :project-identifier
-                                           :sub-category])
+        summaries-core-cat-projects-sub-cat (summarize-data-per-keys
+                                              time-data 
+                                              start-date end-date
+                                              [:core-category :project-identifier
+                                               :sub-category])
 
         ; DateRange - CoreCategory - SubCategory - TimeLengthSum
         ; SummaryType ( day, week, month, year)
 
 
         ; do..
-        summaries (conj [] summary-core-categories
+        summaries (concat summary-core-categories
                         summaries-core-cat-and-projects
                         summaries-core-cat-projects-sub-cat
                         )
@@ -246,7 +290,10 @@
         ;   per project identifier.
         ]
 
-    summaries)
+    summaries
+    ; Finally, write the summaries to the summaries table.
+    ; May need to deal with how to over-write? Is over-writing free?
+    )
   )
 
 
