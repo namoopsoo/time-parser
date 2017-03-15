@@ -175,6 +175,23 @@
      )
   )
 
+(defn summarize-data-per-keys
+  [time-data keywords]
+  
+  (
+   map (
+        fn
+        [[k vs]]
+
+        ; Add (+) up all the time-length's per each group.
+        [k (apply + (map (fn [x] (x :time-length)) vs))])
+   (group-by
+     #(select-keys % keywords)
+     time-data))
+  )
+
+; :core-category :project-identifier
+
 
 ; Every end of day: run summarize-time for that day, to see how that prior day was used 
 ; Every end of week: run summarize-time fpr that week, , to look at prior week
@@ -194,30 +211,33 @@
         all-sum (reduce + all-times-lengths)
 
         ;project-identifiers (map (fn [x] (x :project-identifier)) time-data)
-        core-categories (set (map (fn [x] (x :core-category)) time-data))
-
+        ; core-categories (set (map (fn [x] (x :core-category)) time-data))
 
         ; DateRange - CoreCategory - TimeLengthSum
-        summary-core-categories (map (fn [y] 
-               {:core-category y :time-length (reduce + (map (fn [z] (z :time-length)) (filter (fn [x] (= (x :core-category) y) ) time-data)))}
-               )
-             core-categories)
+        summary-core-categories (summarize-data-per-keys time-data 
+                                          [:core-category])
+
+        ; (map (fn [y] {:core-category y :time-length (reduce + (map (fn [z] (z :time-length)) (filter (fn [x] (= (x :core-category) y) ) time-data)))}) core-categories)
 
 
         ; DateRange - CoreCategory - ProjectIdentifier - TimeLengthSum
-        group-core-cat-and-projects (map (fn [h] 
-                                           (merge {:project-identifier (h :project-identifier)}
-                                                  {:sub-category (h  :sub-category)}
-                                                  )
-                                           
-                                           ) time-data)
-
-        summaries (conj [] summary-core-categories)
-               
-
+        summaries-core-cat-and-projects (summarize-data-per-keys time-data 
+                                          [:core-category :project-identifier])
+        
         ; DateRange - CoreCategory - ProjectIdentifier - SubCategory - TimeLengthSum
+        summaries-core-cat-projects-sub-cat (summarize-data-per-keys time-data 
+                                          [:core-category :project-identifier
+                                           :sub-category])
+
         ; DateRange - CoreCategory - SubCategory - TimeLengthSum
         ; SummaryType ( day, week, month, year)
+
+
+        ; do..
+        summaries (conj [] summary-core-categories
+                        summaries-core-cat-and-projects
+                        summaries-core-cat-projects-sub-cat
+                        )
 
 
         ; add an entry to projects for any new projects?
@@ -225,7 +245,8 @@
         ;   or actually: thats written to at a different time, to describe projects,
         ;   per project identifier.
         ]
-    all-sum)
+
+    summaries)
   )
 
 
