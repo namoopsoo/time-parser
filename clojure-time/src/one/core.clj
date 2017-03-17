@@ -31,11 +31,6 @@
                    (remove #(zero? (mod % prime)) collection))))))))
 
 
-(defn blahd
-  "blarg"
-  [number]
-  number)
-
 ; The name of the lambda must include the full namespace in it's name.
 (deflambdafn one.core.lambdafn
   [in out context]
@@ -44,7 +39,10 @@
         result (sieve-of-eratosthenes (-> body :max num))]
     (with-open [w (io/writer out)]
       (json/generate-stream result w)
-      (log/info "Lambda finished"))))
+      (log/info "Lambda finished")
+      )
+    )
+  )
 
 (defn vec-strange-trime-them
   "Take a vector of strings and for each, split by ;"
@@ -124,21 +122,8 @@
     ; time_start - time_end ; core_category ; project_identifier ; sub_category ; notes
     ; discussion: (can often get into random discussions)
 
-(defn one.core.taketime
-  "Take input time string and return parsed dictionary or fail. 
-  The input is an array of dicts. The output should be helpful to say
-  which dicts were successfully used and show useful errors for which werent"
-  [in]
-  (log/info "take time")
-  (let [body (-> in io/reader (json/parse-stream keyword))
-        result (parse-time-input body)]
-    (result
-     
-     ))
-  )
 
-
-(defn one.core.taketime-non-stream
+(defn process-times-into-storage
   "Take input time string and return parsed dictionary or fail. 
   The input is an array of dicts. The output should be helpful to say
   which dicts were successfully used and show useful errors for which werent
@@ -173,6 +158,22 @@
       (println (str "Failed, because, " (time-hashes-res :err))))
 
      )
+  )
+
+
+;  "Take input time json strings and write to dynamo db or fail.
+;  The input is an array of strings. The output should be helpful to say
+;  which dicts were successfully used and show useful errors for which werent"
+(deflambdafn one.core.taketime
+  [in out context]
+  (log/info "Starting Lambda")
+  (let [body (-> in io/reader (json/parse-stream keyword))
+        result (process-times-into-storage body)]
+    (with-open [w (io/writer out)]
+      (json/generate-stream result w)
+      (log/info "Lambda finished")
+      )
+    )
   )
 
 
@@ -304,7 +305,7 @@
   )
 
 
-(defn one.core.summarize-time-and-write
+(defn summarize-time-and-write
   "take a time start and stop (range) and read what is there,
   and write to the summary table for all of the project
   and subcategory combinations "
@@ -316,6 +317,19 @@
     ; May need to deal with how to over-write? Is over-writing free?
     (db/batch-write-summaries summaries)
 
+    )
+  )
+
+
+(deflambdafn one.core.summarize-time-lambda
+  [in out context]
+  (log/info "Starting Lambda")
+  (let [body (-> in io/reader (json/parse-stream keyword))
+        result (summarize-time-and-write (body :start-date) (body :end-date))]
+    (with-open [w (io/writer out)]
+      (json/generate-stream result w)
+      (log/info "Lambda finished")
+      )
     )
   )
 
