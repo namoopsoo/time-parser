@@ -77,17 +77,40 @@
   )
 
 (defn get-summaries
-  [start-date end-date summary-type]
+  [start-date end-date summary-type core-category]
+  (let [
+        given-core-category (not (or (nil? core-category)
+                                     (= "" core-category)))
+        
+        ] (if given-core-category
+            ; then
+            (
+             dynamo/scan client-config
+             :summary {
+                       :attr-conds {
+                                    :start-date [:eq start-date]
+                                    :end-date [:eq end-date]
+                                    :type [:eq summary-type]
+                                    :core-category [:eq
+                                                    core-category]
+                                    }
+                       })
 
-  (
-   dynamo/scan client-config :summary {
-                                       ;
-                                       :attr-conds {
-                                                    :start-date [:eq start-date]
-                                                    :end-date [:eq end-date]
-                                                    :type [:eq summary-type]
-                                                    }
-                                       })
+            ; else
+            (
+             dynamo/scan client-config :summary {
+                                                 ;
+                                                 :attr-conds {
+                                                              :start-date [:eq start-date]
+                                                              :end-date [:eq end-date]
+                                                              :type [:eq summary-type]
+                                                              }
+                                                 })
+
+            )
+    )
+
+  
 
   )
 

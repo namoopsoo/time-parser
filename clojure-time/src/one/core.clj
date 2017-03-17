@@ -333,3 +333,18 @@
     )
   )
 
+(deflambdafn one.core.get-summary-data
+  [in out context]
+  (log/info "Starting Lambda")
+  (let [body (-> in io/reader (json/parse-stream keyword))
+        result (db/get-summaries (body :start-date) (body :end-date)
+                              (body :summary-type) (body :core-category))
+        ]
+    (with-open [w (io/writer out)]
+      (json/generate-stream result w)
+      (log/info "Lambda finished")
+      )
+    )
+  )
+
+
