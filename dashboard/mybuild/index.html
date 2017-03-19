@@ -17,80 +17,6 @@
 	
 
 	<script type="text/javascript">
-	(function() {
-
-		/*
-		<script src="js/core.js">
-	    <script src="js/sha256.js">
- 		<script src="js/hmac-sha256.js">
- 		<script src="js/aws-sign-web.js">  */
-
-		// Create a new signer
-		var config = {
-			// AWS Region (default: 'eu-west-1')
-			region: 'us-east-1',
-			// AWS service that is called (default: 'execute-api' -- AWS API Gateway)
-			service: 'execute-api',
-			// AWS IAM credentials, here some temporary credentials with a session token
-			accessKeyId: 'AKIAJZRBX47EKWFJQ5UA',
-			secretAccessKey: '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'
-			// sessionToken: '...'
-		};
-		console.log("config: ");
-		console.log(config);
-		var signer = new awsSignWeb.AwsSigner(config);
-
-		console.log(signer);
-
-		var my_base_url = 'https://m8fe2knl2f.execute-api.us-east-1.amazonaws.com/staging/summary';
-		var myurl = my_base_url + '?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category';
-
-
-		// Sign a request
-		var request = {
-			method: 'GET',
-			// url: 'https://m8fe2knl2f.execute-api.us-east-1.amazonaws.com/staging/summary?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category',
-			url: my_base_url,
-			headers: {},
-			params: {
-				// ?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category
-				'end-date': '2017-01-03',
-				'start-date': '2017-01-01',
-				'summary-type': ':core-category'
-			},
-			data: null
-		};
-		var signed = signer.sign(request);
-		console.log(signed);
-
-		console.log('Doing ajax call to ' + myurl);
-		$.get({
-			url: myurl,
-			// method: 'GET',
-			headers: {
-				'Authorization': signed.Authorization,
-				'Accept': signed.Accept,
-				'x-amz-date': signed['x-amz-date'],
-			},
-
-			success: function( response ) {
-				console.log('success'); // server response
-				console.log( response ); // server response
-			},
-			error: function( response ) {
-				console.log( 'error: ' + response ); // server response
-			}
-		});
-
-		///
-		/// {
-		///     'Accept': 'application/json',
-		///     'Authorization': 'AWS4-HMAC-SHA256 Credential=ASIAIQTP2FX4MJ4J2DIA/20160520/eu-west-1/execute-api/aws4_request, SignedHeaders=accept;host;x-amz-date, Signature=cc870c6ea5174baad470e46a7f5642725ff9411e049cf24d730923fca7e5f2b4'
-		///     'x-amz-date': '20160520T053201Z',
-		///     'x-amz-security-token': 'FQoDYXdzEOf//...'
-		/// }
-		///
-	})();
 	</script>
 
 
@@ -112,7 +38,7 @@
 
   <div class="row">
 	  <div class="col-md-12">
-		  <canvas id="graph" class="inner cover" width="1000" height="840" style="width: 500px; height: 420px;">
+		  <canvas id="graph" class="inner cover" width="250" height="210" style="width: 125px; height: 105px;">
 		  </canvas>
 	  </div>
   </div>
