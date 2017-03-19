@@ -168,7 +168,7 @@
   [in out context]
   (log/info "Starting Lambda")
   (let [body (-> in io/reader (json/parse-stream keyword))
-        result (process-times-into-storage body)]
+        result (process-times-into-storage (body :data))]
     (with-open [w (io/writer out)]
       (json/generate-stream result w)
       (log/info "Lambda finished")
