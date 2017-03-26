@@ -23,11 +23,11 @@ randomRGB = function() {
 }
 
 
-updateDoughnut = function(response) {
+updateDoughnut = function(chart_id, response) {
 
 	console.log(response);
 	/* Create the context for applying the chart to the HTML canvas */
-	var ctx = $("#graph").get(0).getContext("2d");
+	var ctx = $(chart_id).get(0).getContext("2d");
 
 	/* Set the inital data */
 	var data = [];
@@ -46,6 +46,108 @@ updateDoughnut = function(response) {
 
 	// 
 	graph = new Chart(ctx).Doughnut(data, options);
+
+}
+
+formatDateString = function(d) {
+	var dd = d.getDate();
+	var mm = d.getMonth()+1; //January is 0!
+	var yyyy = d.getFullYear();
+
+	if(dd<10) {
+		dd='0'+dd
+	} 
+
+	if(mm<10) {
+		mm='0'+mm
+	} 
+
+	return yyyy + '-' + mm + '-' + dd;
+}
+
+getThisWeekDateRange = function(today) {
+	//
+	var yesterday = new Date();
+	yesterday.setDate(today.getDate() - 1);
+	yesterday_string = formatDateString(yesterday);
+	
+	
+	// last monday..
+	// today.getDay()
+	if (today.getDay() == 0) {
+		var delta = 6;
+	} else {
+		var delta = today.getDay() - 1;
+	}
+
+	last_monday = new Date();
+	last_monday.setDate(today.getDate() - delta);
+	last_monday_string = formatDateString(last_monday);
+
+	return [last_monday_string, yesterday_string];
+}
+
+function assert(condition, message) {
+    if (!condition) {
+        throw message || "Assertion failed";
+    }
+}
+
+assertRangesMatch = function(d, out, want) {
+	assert(((out[0] == want[0]) && (out[1] == want[1])),
+			'For ' + formatDateString(d) + ' got ' + out + '  But want ' + want);
+}
+
+testGetThisWeekDateRange = function() {
+	// 2017-03-17
+	var d = new Date(2017, 2, 17);
+	var out = getThisWeekDateRange(d);
+	var want = ["2017-03-13", "2017-03-16"];
+	assertRangesMatch(d, out, want);
+
+	// 2017-03-12 
+	var d = new Date(2017, 2, 12);  
+	var out = getThisWeekDateRange(d);
+	var want = ["2017-03-06", "2017-03-11"];
+	assertRangesMatch(d, out, want);
+
+	// 2017-01-01 
+	var d = new Date(2017, 0, 1);  
+	var want = ["2016-12-26", "2016-12-31"];
+	var out = getThisWeekDateRange(d);
+}
+
+updateThisWeekDoughnut = function() {
+	// Is today Monday? 
+	var today = new Date();
+	// If so, doughnut should be like a blurry placeholder gif.
+	if (today.getDay() == 1) {
+		console.log('Today is Monday so this week is empty so far.');
+
+		return;
+	} else {
+		var out = getThisWeekDateRange(today);
+		last_monday_string = out[0];
+		yesterday_string = out[1];
+	}
+	//
+	// Else... 
+	parameters = {
+		// ?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category
+
+		'end-date': yesterday_string, // 'end-date': '2017-01-03',
+		'start-date': last_monday_string, // 'start-date': '2017-01-01',
+		'summary-type': // ':core-category'
+			':core-category:project-identifier'
+	}
+	return parameters;
+
+	response = updateChartWithTimeData(parameters);
+
+	if (response != null) {
+		updateDoughnut("#graph_this_week", response);
+	} else {console.log('problem. couldnt update.');}
+	
 
 }
 
@@ -94,7 +196,8 @@ updateChartWithTimeData = function(parameters) {
 			console.log('success'); // server response
 			console.log( response ); // server response
 
-			updateDoughnut(response);
+			return response;
+
 		},
 		error: function( response ) {
 			console.log( 'error: ' + response ); // server response
@@ -113,15 +216,6 @@ updateChartWithTimeData = function(parameters) {
 
 
 
-parameters = {
-	// ?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category
-	'end-date': '2017-01-03',
-	'start-date': '2017-01-01',
-	'summary-type': // ':core-category'
-		':core-category:project-identifier'
-}
-
-updateChartWithTimeData(parameters);
 
 
 
