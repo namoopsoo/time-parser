@@ -65,26 +65,81 @@ formatDateString = function(d) {
 	return yyyy + '-' + mm + '-' + dd;
 }
 
+copyDate = function(d) {
+	x = new Date(JSON.parse(JSON.stringify(d)));
+	return x
+}
+
+dateMinusDelta = function(d, delta) {
+	x = copyDate(d);
+	x.setDate(x.getDate() - delta);
+	return x;
+}
+
+changeDateDay = function(d, new_day) {
+	x = copyDate(d);
+	x.setDate(new_day);
+	return x;
+}
+
 getThisWeekDateRange = function(today) {
-	//
-	var yesterday = new Date();
-	yesterday.setDate(today.getDate() - 1);
+	// Yesterday
+	yesterday = dateMinusDelta(today, 1);
 	yesterday_string = formatDateString(yesterday);
-	
 	
 	// last monday..
 	// today.getDay()
-	if (today.getDay() == 0) {
+	if (today.getDay() == 1) { // if today is Monday, nothing to do.
+		return;
+	} else if (today.getDay() == 0) {
 		var delta = 6;
 	} else {
 		var delta = today.getDay() - 1;
 	}
 
-	last_monday = new Date();
-	last_monday.setDate(today.getDate() - delta);
+	last_monday = dateMinusDelta(today, delta);
 	last_monday_string = formatDateString(last_monday);
 
 	return [last_monday_string, yesterday_string];
+}
+
+getLastWeekDateRange = function(today) {
+	// Get prior Sunday.
+	if (today.getDay() == 0) { // Sunday
+		var delta = 7;
+	} else {
+		var delta = today.getDay();
+	}
+	last_sunday = dateMinusDelta(today, delta);
+	last_sunday_string = formatDateString(last_sunday);
+
+	prior_monday = dateMinusDelta(last_sunday, 6);
+	prior_monday_string = formatDateString(prior_monday);
+
+	return [prior_monday_string, last_sunday_string];
+}
+
+getThisMonthDateRange = function(today) {
+	// If the 1st, then nothing to do.
+	if (today.getDate() == 1) {
+		return;}
+   
+	yesterday = dateMinusDelta(today, 1);
+	start_of_month = changeDateDay(today, 1);
+	return [
+		formatDateString(start_of_month),
+		formatDateString(yesterday)];
+}
+
+
+getlastMonthDateRange = function(today) {
+	last_month_end = dateMinusDelta(
+			changeDateDay(today, 1),
+			1);
+	last_month_start = changeDateDay(last_month_end, 1);
+	return [
+		formatDateString(last_month_start),
+		formatDateString(last_month_end)];
 }
 
 function assert(condition, message) {
@@ -121,9 +176,9 @@ updateThisWeekDoughnut = function() {
 	// Is today Monday? 
 	var today = new Date();
 	// If so, doughnut should be like a blurry placeholder gif.
+	// Because this week not ready on Mondays.
 	if (today.getDay() == 1) {
 		console.log('Today is Monday so this week is empty so far.');
-
 		return;
 	} else {
 		var out = getThisWeekDateRange(today);
@@ -216,6 +271,6 @@ updateChartWithTimeData = function(parameters) {
 
 
 
-
+updateThisWeekDoughnut();
 
 
