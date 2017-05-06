@@ -132,7 +132,7 @@ getThisMonthDateRange = function(today) {
 }
 
 
-getlastMonthDateRange = function(today) {
+getLastMonthDateRange = function(today) {
 	last_month_end = dateMinusDelta(
 			changeDateDay(today, 1),
 			1);
@@ -185,29 +185,73 @@ updateThisWeekDoughnut = function() {
 		last_monday_string = out[0];
 		yesterday_string = out[1];
 	}
-	//
-	// Else... 
 	parameters = {
 		// ?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category
-
 		'end-date': yesterday_string, // 'end-date': '2017-01-03',
 		'start-date': last_monday_string, // 'start-date': '2017-01-01',
 		'summary-type': // ':core-category'
 			':core-category:project-identifier'
 	}
-	return parameters;
 
-	response = updateChartWithTimeData(parameters);
+	response = querySummaryWithParams(parameters, "#graph_this_week");
 
-	if (response != null) {
-		updateDoughnut("#graph_this_week", response);
-	} else {console.log('problem. couldnt update.');}
-	
+}
+
+updateLastWeekDoughnut = function() {
+	var today = new Date();
+
+	var out = getLastWeekDateRange(today);
+	start_string = out[0];
+	end_string = out[1];
+
+	parameters = {
+		'end-date': end_string,
+		'start-date': start_string,
+		'summary-type':
+			':core-category:project-identifier'
+	}
+
+	response = querySummaryWithParams(parameters, "#graph_last_week");
+}
+
+updateThisMonthDoughnut = function() {
+	var today = new Date();
+
+	var out = getThisMonthDateRange(today);
+	start_string = out[0];
+	end_string = out[1];
+
+	parameters = {
+		'end-date': end_string,
+		'start-date': start_string,
+		'summary-type':
+			':core-category:project-identifier'
+	}
+
+	response = querySummaryWithParams(parameters, "#graph_this_month");
+}
+
+updateLastMonthDoughnut = function() {
+	var today = new Date();
+
+	var out = getLastMonthDateRange(today);
+	start_string = out[0];
+	end_string = out[1];
+
+	parameters = {
+		'end-date': end_string,
+		'start-date': start_string,
+		'summary-type':
+			':core-category:project-identifier'
+	}
+
+	response = querySummaryWithParams(parameters, "#graph_last_month");
+	// console.log('response: "' + response + '"');
 
 }
 
 
-updateChartWithTimeData = function(parameters) {
+querySummaryWithParams = function(parameters, chart_id) {
 	// Create a new signer
 	var config = {
 		region: 'us-east-1',
@@ -222,7 +266,9 @@ updateChartWithTimeData = function(parameters) {
 
 	// Make request url
 	var base_url = 'https://m8fe2knl2f.execute-api.us-east-1.amazonaws.com/staging/summary';
-	var full_uri = base_url + '?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category%3Aproject-identifier';
+	var full_uri = base_url + '?end-date=' + parameters['end-date'] + '&start-date=' + parameters['start-date'] + '&summary-type=%3Acore-category%3Aproject-identifier';
+
+
 	// var full_uri = base_url + '?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category';
 
 
@@ -249,9 +295,10 @@ updateChartWithTimeData = function(parameters) {
 
 		success: function( response ) {
 			console.log('success'); // server response
-			console.log( response ); // server response
+			console.log(response); // server response
 
-			return response;
+			updateDoughnut(chart_id, response);
+			// return response;
 
 		},
 		error: function( response ) {
@@ -272,5 +319,8 @@ updateChartWithTimeData = function(parameters) {
 
 
 updateThisWeekDoughnut();
+updateLastWeekDoughnut();
+updateThisMonthDoughnut();
+updateLastMonthDoughnut();
 
 
