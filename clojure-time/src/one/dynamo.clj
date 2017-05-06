@@ -38,8 +38,8 @@
        (apply sorted-set)
        vec))
 
-(defn batch-write-times
-  "Write many hashes, each as a new row."
+
+(defn batch-write-times-inner
   [items]
   (dynamo/batch-write-item client-config
                            {:times {
@@ -50,7 +50,21 @@
   )
 
 
-(defn batch-write-summaries
+(defn batch-write-times
+  "Write many hashes, each as a new row.
+
+  But can only write max 25 items at a time.
+  "
+  [items]
+  (if (< (count items) 25)
+    (batch-write-times-inner items)
+    (map batch-write-times-inner (partition 25 items))
+    )
+
+  )
+
+
+(defn batch-write-summaries-inner
   "Write many summaries, each as a new row."
   [items]
   (dynamo/batch-write-item client-config
@@ -60,6 +74,16 @@
                                     }
                             })
   )
+
+
+(defn batch-write-summaries
+  [items]
+  (if (< (count items) 25)
+    (batch-write-summaries-inner items)
+    (map batch-write-summaries-inner (partition 25 items))
+    )
+
+)
 
 
 (defn get-times-for-date-range
