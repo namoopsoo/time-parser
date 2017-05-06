@@ -56,11 +56,7 @@
   But can only write max 25 items at a time.
   "
   [items]
-  (if (< (count items) 25)
-    (batch-write-times-inner items)
-    (map batch-write-times-inner (partition 25 items))
-    )
-
+  (map batch-write-times-inner (partition 25 25 [] items))
   )
 
 
@@ -78,11 +74,7 @@
 
 (defn batch-write-summaries
   [items]
-  (if (< (count items) 25)
-    (batch-write-summaries-inner items)
-    (map batch-write-summaries-inner (partition 25 items))
-    )
-
+  (map batch-write-summaries-inner (partition 25 25 [] items))
 )
 
 
