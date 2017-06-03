@@ -342,6 +342,49 @@
     )
   )
 
+(defn foo
+  [a b]
+  (log/info "blah 1")
+  (log/info "blah 2")
+  (let [
+        c (+ a b)
+        d (log/info "blah 4a")
+        d (log/info "blah 4b")
+        e (log/info "blah 5, d:" d)
+        ]
+    ;
+    (log/info (str "blah 6, and c is " c))
+    (log/info "blah 7")
+    (str "foo" c)
+          )
+  )
+
+
+(deflambdafn one.core.summarize-today-lambda
+  [in out context]
+  (log/info "Starting Lambda")
+  (let [
+        today-var (t/today-at 12 00)
+        _ (log/info (str "today: " today-var))
+
+        date-range (mydateutils/get-this-week-date-range today-var)
+        _ (log/info (str "date-range: " date-range))
+        ]
+    (if (not (= nil date-range))
+      (let [
+            [start end] date-range
+            result (summarize-time-and-write start end)
+            ]
+        (with-open [w (io/writer out)]
+          (json/generate-stream result w)
+          (log/info "Lambda finished")
+          )
+        )
+      )
+    )
+  )
+
+
 (deflambdafn one.core.get-summary-data
   [in out context]
   (log/info "Starting Lambda")
