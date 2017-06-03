@@ -403,8 +403,32 @@
   [in out context]
   (log/info "Starting Lambda")
   (let [body (-> in io/reader (json/parse-stream keyword))
-        result (db/get-summaries (body :start-date) (body :end-date)
-                              (body :summary-type) (body :core-category))
+        period (body :period)
+        start-date-str (body :start-date)
+        end-date-str (body :end-date)
+        summary-type (body :summary-type)
+        core-category (body :core-category)
+
+        ; if period is "daily"
+        ; then run get-summaries for each day from start to end...
+        ; and combine that output.
+        result (if (= period "daily")
+
+                 ; summaries
+                 (concat (map (fn [x] (db/get-summaries x x
+                                       summary-type  core-category
+                                                )
+                        )
+                      (mydateutils/get-dates-in-range start-date-str end-date-str)
+                      ))
+
+                 ; else
+                 ; else if period is nil...
+                 (db/get-summaries start-date-str end-date-str
+                                   summary-type  core-category)
+                 
+                 )
+
         ]
     (with-open [w (io/writer out)]
       (json/generate-stream result w)
