@@ -45,6 +45,29 @@
   )
 
 
+(cljtest/deftest test-get-yesterday
+  (cljtest/is (= (mydateutils/get-yesterday (t/date-time 1986 10 14))
+                 "1986-10-13"
+                 ))
+
+  (cljtest/is (= (mydateutils/get-yesterday (t/date-time 2015 1 1))
+                 "2014-12-31"
+                 ))
+
+  (cljtest/is (= (mydateutils/get-yesterday (t/date-time 2015 2 1))
+                 "2015-01-31"
+                 ))
+  )
+
+
+(cljtest/deftest test-get-dates-in-range
+  (cljtest/is (= (mydateutils/get-dates-in-range "2017-05-31" "2017-06-20")
+                 ["2017-05-31" "2017-06-01" "2017-06-02" "2017-06-03" "2017-06-04" "2017-06-05" "2017-06-06" "2017-06-07" "2017-06-08" "2017-06-09" "2017-06-10" "2017-06-11" "2017-06-12" "2017-06-13" "2017-06-14" "2017-06-15" "2017-06-16" "2017-06-17" "2017-06-18" "2017-06-19" "2017-06-20"]
+                 ))
+
+ )
+
+
 (cljtest/deftest test-find-time-length-delta
   (let [
         date "2017-05-01"
