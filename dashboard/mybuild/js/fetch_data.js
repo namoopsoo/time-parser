@@ -43,6 +43,7 @@ updateDoughnut = function(chart_id, response) {
 	}
 	console.log('data for doughnut: ');
 	console.log(data);
+	console.log('done updateDoughnut for chart_id ' + chart_id);
 
 	// 
 	graph = new Chart(ctx).Doughnut(data, options);
@@ -91,7 +92,7 @@ getThisWeekDateRange = function(today) {
 	// today.getDay()
 	if (today.getDay() == 1) { // if today is Monday, nothing to do.
 		return;
-	} else if (today.getDay() == 0) {
+	} else if (today.getDay() == 0) {  // if today is Sunday , delta is 6.
 		var delta = 6;
 	} else {
 		var delta = today.getDay() - 1;
@@ -294,12 +295,13 @@ querySummaryWithParams = function(parameters, chart_id) {
 		},
 
 		success: function( response ) {
-			console.log('success'); // server response
-			console.log(response); // server response
+			console.log('success for chart_id:' + chart_id);
+			console.log('parameters:');
+			console.log(parameters);
+			console.log(response);
+			console.log('end response for ' + chart_id);
 
 			updateDoughnut(chart_id, response);
-			// return response;
-
 		},
 		error: function( response ) {
 			console.log( 'error: ' + response ); // server response
