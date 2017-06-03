@@ -5,6 +5,8 @@
     ))
 
 
+(def date-formatter-date-hour-min (f/formatters :date-hour-minute))
+
 
 ; func for getting this week date range
 ; - if today is Monday, should return something like nil, because nothing to do.
@@ -57,5 +59,20 @@
     )
   )
 
+
+(defn find-time-length-delta
+  "
+  There are 60*24 = 1440 minutes in a day, so if end-time is 00:00,
+  then delta is ...
+
+  How many milliseconds in a day:
+  boot.user=> (* 60000 60 24)
+  86400000
+  "
+  [start-date end-date end-time]
+  (if (= end-time "00:00")
+    (- 86400000 (- start-date end-date))
+    (- end-date start-date))
+  )
 
 

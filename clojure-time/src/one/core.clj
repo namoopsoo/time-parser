@@ -1,6 +1,7 @@
 (ns one.core
   (:require
     [one.dynamo :as db]
+    [one.date-utils :as mydateutils]
     [uswitch.lambada.core :refer [deflambdafn]]
     [cheshire.core :as json]
     [taoensso.timbre :as log]
@@ -65,6 +66,8 @@
   )
 
 
+
+
 (defn make-time-vec-to-put-dic
   "Take a vector of attributes and prepare a dict.
   Also incorporate the date.
@@ -82,11 +85,14 @@
 
         [start-time end-time] (map clojure.string/trim (strlib/split time-vect #"-"))
 
-        date-formatter (f/formatters :date-hour-minute)
-
-        index-date (c/to-long (f/parse date-formatter (str date "T" start-time)))
-        end-date (c/to-long (f/parse date-formatter (str date "T" end-time)))
-        time-length-miliseconds (- end-date index-date)
+        index-date (c/to-long (f/parse
+                                mydateutils/date-formatter-date-hour-min
+                                (str date "T" start-time)))
+        end-date (c/to-long (f/parse
+                              mydateutils/date-formatter-date-hour-min
+                              (str date "T" end-time)))
+        time-length-miliseconds (mydateutils/find-time-length-delta
+                                  index-date end-date end-time)
         time-length (/ time-length-miliseconds 60000) ; minutes
 
         ; TODO verify that t1 < t2... 
@@ -311,7 +317,10 @@
   and subcategory combinations "
   [start-date end-date]
   (let [
-        summaries (summarize-time start-date end-date)]
+        summaries (summarize-time start-date end-date)
+        _ (log/info (str "summaries len: " (count summaries)
+                         ", and first is: " (first summaries)))
+        ]
 
     ; Finally, write the summaries to the summaries table.
     ; May need to deal with how to over-write? Is over-writing free?
