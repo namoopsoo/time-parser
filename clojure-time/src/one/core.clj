@@ -415,7 +415,7 @@
         result (if (= period "daily")
 
                  ; summaries
-                 (concat (map (fn [x] (db/get-summaries x x
+                 (apply concat (map (fn [x] (db/get-summaries x x
                                        summary-type  core-category
                                                 )
                         )
