@@ -360,6 +360,19 @@
   )
 
 
+(defn do-this-week-summary
+  [date-range]
+  (if (not (= nil date-range))
+    (let [
+          [start end] date-range
+          result (summarize-time-and-write start end)
+          ]
+      result
+      )
+    )
+  )
+
+
 (deflambdafn one.core.summarize-today-lambda
   [in out context]
   (log/info "Starting Lambda")
@@ -367,19 +380,20 @@
         today-var (t/today-at 12 00)
         _ (log/info (str "today: " today-var))
 
-        date-range (mydateutils/get-this-week-date-range today-var)
-        _ (log/info (str "date-range: " date-range))
+        this-week-date-range (mydateutils/get-this-week-date-range today-var)
+        _ (log/info (str "this-week-date-range: " this-week-date-range))
+
+        yesterday (mydateutils/get-yesterday today-var)
+        _ (log/info (str "yesterday: " yesterday))
+        result-daily (summarize-time-and-write yesterday yesterday)
+
+        result-this-week (do-this-week-summary this-week-date-range)
+
+        result {:result-daily result-daily :result-this-week result-this-week}
         ]
-    (if (not (= nil date-range))
-      (let [
-            [start end] date-range
-            result (summarize-time-and-write start end)
-            ]
-        (with-open [w (io/writer out)]
-          (json/generate-stream result w)
-          (log/info "Lambda finished")
-          )
-        )
+    (with-open [w (io/writer out)]
+      (json/generate-stream result w)
+      (log/info "Lambda finished")
       )
     )
   )
