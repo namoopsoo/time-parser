@@ -83,6 +83,12 @@ changeDateDay = function(d, new_day) {
 	return x;
 }
 
+changeDateMonth = function(d, new_month) {
+	x = copyDate(d);
+	x.setMonth(new_month);
+	return x;
+}
+
 getThisWeekDateRange = function(today) {
 	// Yesterday
 	yesterday = dateMinusDelta(today, 1);
@@ -143,6 +149,16 @@ getLastMonthDateRange = function(today) {
 		formatDateString(last_month_end)];
 }
 
+getThisYearDateRange = function(today) {
+	yesterday = dateMinusDelta(today, 1);
+	start_of_year = changeDateMonth(
+			changeDateDay(today, 1), 0);
+
+	return [
+		formatDateString(start_of_year),
+		formatDateString(yesterday)];
+}
+
 function assert(condition, message) {
     if (!condition) {
         throw message || "Assertion failed";
@@ -171,6 +187,15 @@ testGetThisWeekDateRange = function() {
 	var d = new Date(2017, 0, 1);  
 	var want = ["2016-12-26", "2016-12-31"];
 	var out = getThisWeekDateRange(d);
+}
+
+
+testYearToDateDateRange = function() {
+	// 2017-03-17
+	var d = new Date(2017, 2, 17);
+	var out = getThisYearDateRange(d);
+	var want = ["2017-01-01", "2017-03-16"];
+	assertRangesMatch(d, out, want);
 }
 
 updateThisWeekDoughnut = function() {
@@ -252,6 +277,50 @@ updateLastMonthDoughnut = function() {
 }
 
 
+makeSortedParamString = function(parameters) {
+	// Sort alphabetical order
+	var the_keys = Object.keys(parameters).sort();
+
+	var pairs = [];
+    the_keys.forEach(function(key) {
+		pairs.push(key + '=' + encodeURIComponent(parameters[key]));
+	});
+
+	var output = '?' + pairs.join('&');
+	return output;
+}
+
+
+testMakeSortedParamString = function() {
+	// Test one
+	parameters = {
+		'end-date': '2017-01-03',
+		'start-date': '2017-01-01',
+		'summary-type': ':core-category:project-identifier'
+	}
+
+	var param_string = makeSortedParamString(parameters);
+	var expected = "?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category%3Aproject-identifier";
+
+	assert((param_string == expected),
+			"Dont have a match. Got " + param_string);
+
+	// Test two
+	parameters = {
+		'end-date': '2017-01-03',
+		'start-date': '2017-01-01',
+		'summary-type': ':core-category:project-identifier',
+		'period': 'daily'
+	}
+
+	var param_string = makeSortedParamString(parameters);
+	var expected = "?end-date=2017-01-03&period=daily&start-date=2017-01-01&summary-type=%3Acore-category%3Aproject-identifier";
+
+	assert((param_string == expected),
+			"Dont have a match. Got " + param_string);
+}
+
+
 querySummaryWithParams = function(parameters, chart_id) {
 	// Create a new signer
 	var config = {
@@ -267,12 +336,13 @@ querySummaryWithParams = function(parameters, chart_id) {
 
 	// Make request url
 	var base_url = 'https://m8fe2knl2f.execute-api.us-east-1.amazonaws.com/staging/summary';
-	var full_uri = base_url + '?end-date=' + parameters['end-date'] + '&start-date=' + parameters['start-date'] + '&summary-type=%3Acore-category%3Aproject-identifier';
 
+	// var full_uri = base_url + '?end-date=' + parameters['end-date'] + '&start-date=' + parameters['start-date'] + '&summary-type=%3Acore-category%3Aproject-identifier';
+
+	var full_uri = base_url + makeSortedParamString(parameters); 
+	console.log("full_uri: " + full_uri);
 
 	// var full_uri = base_url + '?end-date=2017-01-03&start-date=2017-01-01&summary-type=%3Acore-category';
-
-
 
 	// Sign a request
 	var request = {
@@ -301,7 +371,13 @@ querySummaryWithParams = function(parameters, chart_id) {
 			console.log(response);
 			console.log('end response for ' + chart_id);
 
-			updateDoughnut(chart_id, response);
+			if (chart_id == "daily_stacked_area_chart") {
+				// Currently need this hack since the d3js code
+				// is not specific to an #id yet.
+				wrapperUpdateTheDailyStackedChart(response);
+			} else {
+				updateDoughnut(chart_id, response);
+			}
 		},
 		error: function( response ) {
 			console.log( 'error: ' + response ); // server response
@@ -310,19 +386,4 @@ querySummaryWithParams = function(parameters, chart_id) {
 
 
 }
-
-// (function() { })();
-	/*
-	<script src="js/core.js">
-	<script src="js/sha256.js">
-	<script src="js/hmac-sha256.js">
-	<script src="js/aws-sign-web.js">  */
-
-
-
-updateThisWeekDoughnut();
-updateLastWeekDoughnut();
-updateThisMonthDoughnut();
-updateLastMonthDoughnut();
-
 

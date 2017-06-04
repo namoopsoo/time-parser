@@ -16,7 +16,12 @@ body {
 
 </style>
 <body>
+<script src="bower_components/cryptojslib/rollups/sha256.js"></script>
+<script src="bower_components/cryptojslib/rollups/hmac-sha256.js"></script>
+<script src="bower_components/aws-sign-web/aws-sign-web.js"></script>
+<script src="js/jquery-3.2.0.min.js"></script>
 <script src="//d3js.org/d3.v3.min.js"></script>
+<script src="js/fetch_data.js"></script>
 <script>
 
 // var format = d3.time.format("%m/%d/%y");
@@ -115,8 +120,6 @@ fillWithMissingObjects = function(data) {
 
 
 updateStackedChart = function(data) {
-
-
   data.forEach(function(d) {
     d.date = format.parse(d.date);
     d.value = +d.value;
@@ -142,6 +145,47 @@ updateStackedChart = function(data) {
   svg.append("g")
       .attr("class", "y axis")
       .call(yAxis);
+}
+
+
+wrapperUpdateTheDailyStackedChart = function(response) {
+	console.log("stacked summary daily response");
+	console.log(response);
+	var data = [];
+	for (var i = 0; i < response.length; i++) {
+		data.push({
+					value: response[i]["time-length"],
+					key: response[i]["project-identifier"],
+					date: response[i]["start-date"],
+				})
+	}
+
+	new_data = fillWithMissingObjects(data);
+	updateStackedChart(new_data);
+}
+
+
+updateTheDailyStackedChart = function() {
+	// Do data fetch..
+	var today = new Date();
+
+	var out = getThisYearDateRange(today);
+	start_string = out[0];
+	end_string = out[1];
+
+	// TODO remove hard coded.
+	start_string = "2017-05-31";
+	end_string = "2017-06-02";
+
+	parameters = {
+		'end-date': end_string,
+		'start-date': start_string,
+		'summary-type':
+			':core-category:project-identifier',
+		'period': 'daily'
+	}
+
+	response = querySummaryWithParams(parameters, "daily_stacked_area_chart");
 }
 
 var data = [
@@ -193,9 +237,14 @@ var data = [
 	  "key": "Group7",
       "value": "5"},
   ];
-new_data = fillWithMissingObjects(data);
-updateStackedChart(new_data);
+
 
 </script>
 
-</html>
+<script>
+updateTheDailyStackedChart();
+</script>
+
+
+</body></html>
+
