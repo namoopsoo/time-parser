@@ -24,7 +24,107 @@ body {
 <script src="js/fetch_data.js"></script>
 <script>
 
+var sample_data = [
+  {
+	  "date": "2012-04-23",
+	  "key": "Group2",
+      "value": "27"},
+
+  {
+	  "date": "2012-04-23",
+	  "key": "Group1",
+      "value": "0"},
+  {
+	  "date": "2012-04-23",
+	  "key": "Group3",
+      "value": "67"},
+
+  {
+	  "date": "2012-04-24",
+	  "key": "Group1",
+      "value": "31"},
+  {
+	  "date": "2012-04-24",
+	  "key": "Group3",
+      "value": "11"},
+  {
+	  "date": "2012-04-24",
+	  "key": "Group2",
+      "value": "22"},
+  {
+	  "date": "2012-04-25",
+	  "key": "Group1",
+      "value": "45"},
+  {
+	  "date": "2012-04-25",
+	  "key": "Group2",
+      "value": "33"},
+  {
+	  "date": "2012-04-25",
+	  "key": "Group3",
+      "value": "22"}
+  ];
+
+
 // var format = d3.time.format("%m/%d/%y");
+
+findAllIdentifiers = function(data, attribute) {
+  var identifiers = {};
+
+  data.forEach(function(d) {
+    if (!(d[attribute] in identifiers)) {
+		identifiers[d[attribute]] = 1;
+	}
+  });
+
+  var the_keys = Object.keys(identifiers);
+  return the_keys.sort();
+}
+
+fillWithMissingObjects = function(data) {
+	var all_dates = findAllIdentifiers(data, "date");
+	var all_keys = findAllIdentifiers(data, "key");
+
+	console.log("all_dates " + JSON.stringify(all_dates));
+	console.log("all_keys " + JSON.stringify(all_keys));
+	var myhash = {};
+
+	data.forEach(function(d) {
+		myhash[[d["key"], d["date"]]] = d.value;
+	});
+
+	var new_data = [];
+	console.log("myhash " + JSON.stringify(myhash));
+
+	all_dates.forEach(function(_date){
+		all_keys.forEach(function(_key){
+
+			console.log(">> " + _date);
+
+			if (!([_key, _date] in myhash)) {
+				new_data.push({
+					"key": _key,
+					"date": _date,
+					"value": "0"
+				})
+			
+			} else {
+				new_data.push({
+					"key": _key,
+					"date": _date,
+					"value": JSON.stringify(myhash[[_key, _date]])
+				})
+			}
+		});
+	});
+	console.log("new data " + JSON.stringify(new_data));
+	
+    return new_data;
+}
+
+
+updateStackedChart = function(data) {
+
 var format = d3.time.format("%Y-%m-%d");
 
 var margin = {top: 20, right: 30, bottom: 30, left: 40},
@@ -69,57 +169,8 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-findAllIdentifiers = function(data, attribute) {
-  var identifiers = {};
+  // ...
 
-  data.forEach(function(d) {
-    if (!(d[attribute] in identifiers)) {
-		identifiers[d[attribute]] = 1;
-	}
-  });
-
-  var the_keys = Object.keys(identifiers);
-  return the_keys.sort();
-}
-
-fillWithMissingObjects = function(data) {
-	var all_dates = findAllIdentifiers(data, "date");
-	var all_keys = findAllIdentifiers(data, "key");
-
-	var myhash = {};
-
-	var all_combos = {};
-	data.forEach(function(d) {
-		myhash[[d.key, d.date]] = d.value;
-	});
-
-	var new_data = [];
-
-	all_dates.forEach(function(_date){
-		all_keys.forEach(function(_key){
-			if (!([_key, _date] in myhash)) {
-				myhash[[_key, _date]] = "0";
-				new_data.push({
-					"key": _key,
-					"date": _date,
-					"value": "0"
-				})
-			
-			} else {
-				new_data.push({
-					"key": _key,
-					"date": _date,
-					"value": myhash[[_key, _date]]
-				})
-			}
-		});
-	});
-	
-    return new_data;
-}
-
-
-updateStackedChart = function(data) {
   data.forEach(function(d) {
     d.date = format.parse(d.date);
     d.value = +d.value;
@@ -154,13 +205,22 @@ wrapperUpdateTheDailyStackedChart = function(response) {
 	var data = [];
 	for (var i = 0; i < response.length; i++) {
 		data.push({
-					value: response[i]["time-length"],
-					key: response[i]["project-identifier"],
-					date: response[i]["start-date"],
+					"value": response[i]["time-length"],
+					"key": response[i]["project-identifier"],
+					"date": response[i]["start-date"],
 				})
 	}
+	console.log("before fill with missing: data: ");
+	console.log(data);
+
+    // XXX 
 
 	new_data = fillWithMissingObjects(data);
+	console.log("after fill with missing: new_data: ");
+	console.log(new_data);
+	console.log("and stringify.. " + JSON.stringify(new_data));
+
+    // new_data = sample_data;
 	updateStackedChart(new_data);
 }
 
@@ -188,60 +248,8 @@ updateTheDailyStackedChart = function() {
 	response = querySummaryWithParams(parameters, "daily_stacked_area_chart");
 }
 
-var data = [
-  {
-	  "date": "2012-04-23",
-	  "key": "Group2",
-      "value": "27"},
-
-  {
-	  "date": "2012-04-23",
-	  "key": "Group1",
-      "value": "0"},
-  {
-	  "date": "2012-04-23",
-	  "key": "Group5",
-      "value": "67"},
-
-  {
-	  "date": "2012-04-24",
-	  "key": "Group1",
-      "value": "31"},
-  {
-	  "date": "2012-04-24",
-	  "key": "Group3",
-      "value": "11"},
-  {
-	  "date": "2012-04-24",
-	  "key": "Group2",
-      "value": "22"},
-  {
-	  "date": "2012-04-25",
-	  "key": "Group1",
-      "value": "45"},
-  {
-	  "date": "2012-04-25",
-	  "key": "Group2",
-      "value": "33"},
-  {
-	  "date": "2012-04-25",
-	  "key": "Group3",
-      "value": "22"},
-
-  {
-	  "date": "2012-04-25",
-	  "key": "Group4",
-      "value": "52"},
-  {
-	  "date": "2012-04-25",
-	  "key": "Group7",
-      "value": "5"},
-  ];
 
 
-</script>
-
-<script>
 updateTheDailyStackedChart();
 </script>
 
