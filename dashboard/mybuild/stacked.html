@@ -213,7 +213,6 @@ wrapperUpdateTheDailyStackedChart = function(response) {
 	console.log("before fill with missing: data: ");
 	console.log(data);
 
-    // XXX 
 
 	new_data = fillWithMissingObjects(data);
 	console.log("after fill with missing: new_data: ");
@@ -222,6 +221,19 @@ wrapperUpdateTheDailyStackedChart = function(response) {
 
     // new_data = sample_data;
 	updateStackedChart(new_data);
+
+    // Footer below.
+	var all_keys = findAllIdentifiers(data, "key");
+
+	var z = d3.scale.category20c();
+
+	for (var i = 0; i < data.length; i++) {
+		var footer = d3.select("body").append("div")
+			.text(all_keys[i])
+			.style("background", z(i))
+			.style("height", "20px")
+			.style("width", "200px");
+	}
 }
 
 
@@ -234,8 +246,8 @@ updateTheDailyStackedChart = function() {
 	end_string = out[1];
 
 	// TODO remove hard coded.
-	start_string = "2017-05-31";
-	end_string = "2017-06-02";
+	start_string = "2017-05-01";
+	end_string = "2017-06-05";
 
 	parameters = {
 		'end-date': end_string,

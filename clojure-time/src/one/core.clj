@@ -409,6 +409,8 @@
         summary-type (body :summary-type)
         core-category (body :core-category)
 
+        _ (log/info (str "input body: " body))
+
         ; if period is "daily"
         ; then run get-summaries for each day from start to end...
         ; and combine that output.
