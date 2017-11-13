@@ -245,20 +245,48 @@ updateTheDailyStackedChart = function() {
 	start_string = out[0];
 	end_string = out[1];
 
-	// TODO remove hard coded.
-	start_string = "2017-05-01";
-	end_string = "2017-06-05";
+	bounds = getBoundsFromQueryString();
+	if (bounds === null) {
+		var today = new Date();
+		var out = getThisMonthDateRange(today);
+		start_string = out[0];
+		end_string = out[1];}
+	else {
+		start_string = bounds.start;
+		end_string = bounds.end;
+		}
 
 	parameters = {
 		'end-date': end_string,
 		'start-date': start_string,
 		'summary-type':
 			':core-category:project-identifier',
-		'period': 'daily'
+		'period': 'daily',
+		'core-category': 'work'
 	}
 
 	response = querySummaryWithParams(parameters, "daily_stacked_area_chart");
 }
+
+
+getBoundsFromQueryString = function() {
+	var urlParams;
+	var match,
+		pl     = /\+/g,  // Regex for replacing addition symbol with a space
+		search = /([^&=]+)=?([^&]*)/g,
+		decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+		query  = window.location.search.substring(1);
+
+	urlParams = {};
+	while (match = search.exec(query))
+	   urlParams[decode(match[1])] = decode(match[2]);
+
+	if (urlParams.start === undefined || urlParams.end === undefined)
+		return null;
+	else
+		return urlParams;
+		}
+
 
 
 

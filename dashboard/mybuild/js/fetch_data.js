@@ -334,6 +334,9 @@ querySummaryWithParams = function(parameters, chart_id) {
 	console.log(config);
 	var signer = new awsSignWeb.AwsSigner(config);
 
+	// Update params with work 
+	parameters['core-category'] = 'work';
+
 	// Make request url
 	var base_url = 'https://m8fe2knl2f.execute-api.us-east-1.amazonaws.com/staging/summary';
 

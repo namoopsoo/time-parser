@@ -6,12 +6,19 @@ And push to Amazon.
 
 '''
 import os
+import json
 import datetime
 import sys
 import re
 import requests
 from aws_requests_auth.aws_auth import AWSRequestsAuth
+from copy import deepcopy
 
+LOGDIR = '/Users/michal/logs/timeparse_uploadclient'
+
+
+class TimeParseException(Exception):
+    pass
 
 
 def f(mylist, dirname, fnames):
@@ -21,7 +28,7 @@ def f(mylist, dirname, fnames):
 def get_files_to_parse(raw_dir):
 
     if not os.path.isdir(raw_dir):
-        raise Exception('not a dir')
+        raise Exception('%s is not a dir' % raw_dir)
 
     files_list = []
     os.path.walk(raw_dir, f, files_list)
@@ -37,8 +44,21 @@ def get_files_to_parse(raw_dir):
             and os.path.exists(path)
             ]
 
+
+def wrapper_parse_raw_file(input_file):
+    try:
+        output = parse_raw_file(input_file)
+    except TimeParseException as e:
+        output = {'filename': input_file,
+                'error': 'parse exception',
+                'error_detail': e.message}
+    return output
+
     
 def parse_raw_file(input_file):
+    print input_file, ':'
+    #if input_file == '/Users/michal/LeDropbox/Dropbox/mydata/work-aug1.times':
+    #    import ipdb; ipdb.set_trace()
 
     with open(input_file) as fd:
         content = fd.read()
@@ -51,8 +71,9 @@ def parse_raw_file(input_file):
         print 'scanning {} lines'.format(len(lines))
         for i, line in enumerate(lines):
             match_day = re.match(r'times (\d{4}-\d{2}-\d{2})', line, re.IGNORECASE)
-            match_time = re.match(r'^\d', line)
-            blank_line = re.match(r'^$', line)
+            match_time = re.match(r'^\d\d:\d\d', line)
+            blank_line = re.match(r'^\s*$', line)
+            carriage_return_line = re.match(r'\r', line)
 
             if match_day:
                 if time_list:
@@ -64,12 +85,16 @@ def parse_raw_file(input_file):
 
                 time_list = []
             elif match_time:
+                parts = line.split(';')
+                if not len(parts) >= 4 or parts[3].strip() == '' or not re.search(r'-', parts[0]):
+                    raise TimeParseException, '{}: line {} does not conform, "{}"'.format(input_file, i, line)
                 # add line
                 time_list.append(line)
-            elif blank_line:
+            elif blank_line or carriage_return_line:
                 pass
             else:
-                raise Exception, 'line {} does not conform, "{}"'.format(i, line)
+                raise TimeParseException, '{}: line {} does not conform, "{}"'.format(input_file, i, line)
+                
         # End...
         if time_list:
             all_dict[day] = time_list
@@ -94,15 +119,16 @@ def from_dict_make_payload(all_dict):
 
 def push_times_to_aws(data):
     if data and data.get('data'):
-        import ipdb; ipdb.set_trace()
 
         auth = make_auth()
         url = make_time_push_url()
-        print auth, url
+        # print auth, url
         response = requests.post(url, auth=auth, json=data)
 
-        print response.status_code
-        print response.json()
+        output = deepcopy(data)
+        output.update({'status_code': response.status_code, 'json': response.json()})
+        return output
+
 
 def make_time_push_url():
     return 'https://{}/staging/time'.format(os.environ.get('API_GATEWAY'))
@@ -132,7 +158,8 @@ def make_summarize_url():
             os.environ.get('API_GATEWAY'))
 
 
-def do_daily_summarize_for_range(start, end):
+def do_daily_summarize_for_range(start, end, dry_run):
+    # import ipdb; ipdb.set_trace()
     delta = (end - start).days
     dates = [
             (start + datetime.timedelta(days=i)).strftime('%Y-%m-%d')
@@ -142,28 +169,60 @@ def do_daily_summarize_for_range(start, end):
         "end-date": d}
         for d in dates]
 
-    import ipdb; ipdb.set_trace()
-
-    [do_summarize_with_payload(payload)
+    [do_summarize_with_payload(payload, dry_run)
             for payload in payloads]
 
 
-def do_summarize_with_payload(payload):
+def do_summarize_for_range(start, end, dry_run):
+
+    payload = {"start-date": start.strftime('%Y-%m-%d'),
+        "end-date": end.strftime('%Y-%m-%d')}
+
+    do_summarize_with_payload(payload, dry_run)
+    pass
+
+
+def do_summarize_with_payload(payload, dry_run):
     url = make_summarize_url()
     auth = make_auth()
     print auth, url
-    response = requests.post(url, auth=auth, json=payload)
+    if dry_run:
+        print 'dry run'
+        print payload
+    else:
+        response = requests.post(url, auth=auth, json=payload)
 
     print response.status_code
     print response.json()
 
 
-def do_upload_times_for_files_in_dir(raw_dir):
+def do_upload_times_for_files_in_dir(raw_dir, dry_run):
     files = get_files_to_parse(raw_dir)
-    json_payloads = [parse_raw_file(raw_file) for raw_file in files]
+    json_payloads = [wrapper_parse_raw_file(raw_file) for raw_file in files]
+    parse_errors = [output for output in json_payloads if 'error' in output]
+    good_json_payloads = [output for output in json_payloads if 'error' not in output]
 
+
+    upload_results = []
     # Push them up.
-    [push_times_to_aws(payload) for payload in json_payloads]
+    if not dry_run:
+        [upload_results.append(push_times_to_aws(payload)) for payload in good_json_payloads]
+
+    print 'Finished pushing times for files, '
+    print files
+
+    log_event({
+        'parse_errors': parse_errors,
+        'upload_results': upload_results})
+
+
+def log_event(data):
+    filename = datetime.datetime.now().strftime('uploadclient.%Y-%m-%dT%H%M%S.log')
+    logdir = os.environ.get('CLIENT_LOGDIR')
+    path = os.path.join(logdir, filename)
+
+    with open(path, 'w') as fd:
+        json.dump(data, fd, indent=4)
 
 
 if __name__ == '__main__':
@@ -171,13 +230,28 @@ if __name__ == '__main__':
     assert_environ()
 
     print sys.argv
-    if len(sys.argv) == 4:
-        if sys.argv[1] == 'summarize':
+
+    if len(sys.argv) == 1:
+        print 'Usage: upload_client.py times '
+        sys.exit()
+
+    if sys.argv[1] == '--dry-run':
+        dry_run = True
+        sys.argv.pop(1)
+    else:
+        dry_run = False
+
+
+    if len(sys.argv) == 4 and sys.argv[1] == 'summarize':
             start, end = sys.argv[2], sys.argv[3]
             start, end = get_date(start), get_date(end)
-            do_daily_summarize_for_range(start, end)
+            do_summarize_for_range(start, end, dry_run)
+    elif len(sys.argv) == 4 and sys.argv[1] == 'summarizedaily':
+            start, end = sys.argv[2], sys.argv[3]
+            start, end = get_date(start), get_date(end)
+            do_daily_summarize_for_range(start, end, dry_run)
     elif len(sys.argv) == 3:
         if sys.argv[1] == 'times':
             raw_dir = sys.argv[2]
-            do_upload_times_for_files_in_dir(raw_dir)
+            do_upload_times_for_files_in_dir(raw_dir, dry_run)
 
