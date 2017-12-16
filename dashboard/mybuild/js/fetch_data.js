@@ -77,6 +77,12 @@ dateMinusDelta = function(d, delta) {
 	return x;
 }
 
+datePlusDelta = function(d, delta) {
+	x = copyDate(d);
+	x.setDate(x.getDate() + delta);
+	return x;
+}
+
 changeDateDay = function(d, new_day) {
 	x = copyDate(d);
 	x.setDate(new_day);
@@ -86,6 +92,12 @@ changeDateDay = function(d, new_day) {
 changeDateMonth = function(d, new_month) {
 	x = copyDate(d);
 	x.setMonth(new_month);
+	return x;
+}
+
+dateFromDateString = function(date_str) {
+	// Expecting date string like: "2017-12-01"
+	x = new Date(date_str + "T12:00");
 	return x;
 }
 
@@ -319,6 +331,58 @@ testMakeSortedParamString = function() {
 	assert((param_string == expected),
 			"Dont have a match. Got " + param_string);
 }
+
+arraysEqual = function(a1, a2) {
+	// check each element at a time.
+	if (a1.length != a2.length) return false;
+
+	for (i = 0; i < a1.length; i++) {
+		if (a1[i] != a2[i]) return false;
+	}
+	return true;
+}
+
+fillMissingDates = function(dates) {
+	// Given a list of date strings, return a list without dates missing in between.
+
+	// Find min and max
+	// sort first.
+	var sorted_dates = dates.slice();
+	sorted_dates.sort(); // sorts ascending
+
+	var start = sorted_dates[0];
+	var end = sorted_dates[sorted_dates.length -1];
+
+	var new_list = [];
+	var start_date = dateFromDateString(start);
+	var end_date = dateFromDateString(end);
+
+	var d = copyDate(start_date);
+	while(d <= end_date) {
+		new_list.push(formatDateString(d));
+		d = datePlusDelta(d, 1);
+	}
+	return new_list;
+}
+
+testFillMissingDates = function() {
+	// Test One
+	var input_dates_list = ["2017-12-01","2017-12-04","2017-12-05","2017-12-06","2017-12-07","2017-12-08","2017-12-11","2017-12-12","2017-12-13","2017-12-14","2017-12-15"];
+	var output_dates_list = fillMissingDates(input_dates_list);
+	var expected_output = ["2017-12-01", "2017-12-02", "2017-12-03", "2017-12-04","2017-12-05","2017-12-06","2017-12-07","2017-12-08", "2017-12-09", "2017-12-10", "2017-12-11","2017-12-12","2017-12-13","2017-12-14","2017-12-15"];
+
+	assert(arraysEqual(output_dates_list, expected_output), "Test1: Expected did not match. Got: " + output_dates_list);
+
+	// Test Two
+	var input_dates_list = ["2017-11-28","2017-12-04","2017-12-05"];
+	var output_dates_list = fillMissingDates(input_dates_list);
+	var expected_output = ["2017-11-28","2017-11-29","2017-11-30","2017-12-01", "2017-12-02", "2017-12-03", "2017-12-04","2017-12-05"];
+
+	assert(arraysEqual(output_dates_list, expected_output), "Test2: Expected did not match. Got: " + output_dates_list);
+
+}
+
+
 
 
 querySummaryWithParams = function(parameters, chart_id) {

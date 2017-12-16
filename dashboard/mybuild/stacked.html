@@ -82,7 +82,8 @@ findAllIdentifiers = function(data, attribute) {
 }
 
 fillWithMissingObjects = function(data) {
-	var all_dates = findAllIdentifiers(data, "date");
+	var input_dates = findAllIdentifiers(data, "date");
+	var all_dates = fillMissingDates(input_dates);
 	var all_keys = findAllIdentifiers(data, "key");
 
 	console.log("all_dates " + JSON.stringify(all_dates));
