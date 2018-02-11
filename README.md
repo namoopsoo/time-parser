@@ -18,6 +18,9 @@ times 2018-02-10
 
 #### Output example
 
-* Here is an example of an output stacked area chart of a `core-category:work` query, 
+* Here is an example of an output stacked area chart of a `core-category:work` query, which is using the author's data from December of 2017. This uses the d3js so called _stacked_ layout. The _y-axis_ represents minutes.
 ![image](doc/images/example-stacked-2018-02-11.png)
+* This particular layout only allows for a max of `20` layers before colors are re-used for other categories.
+* [a lot can be said](http://leebyron.com/streamgraph/stackedgraphs_byron_wattenberg.pdf) about stacked area chart aesthetics.
+
 
