@@ -1,6 +1,6 @@
 
 ### What
-A simple time tracker lambda based service, built as a project to learn clojure and micro services. The initial inspiration came from reading the book [168 Hours](https://link-to-168-hours-book), in which Author Author asks us to really see what we are doing with our time. There are 168 hours in a week and her claim is that although we feel we never have enough time, journaling what we do is a means to bullshit test ourselves.
+A simple time tracker lambda based service, built as a project to learn clojure and micro services. The initial inspiration came from reading the book [168 Hours](https://lauravanderkam.com/books/168-hours/), in which Laura Vanderkam asks us to really see what we are doing with our time. There are 168 hours in a week and her claim is that although we feel we never have enough time, journaling what we do is a means to bullshit test ourselves.
 
 #### Input data
 * We split our time between `personal` and `work` I think. 
@@ -15,4 +15,9 @@ times 2018-02-10
 12:20 - 13:05 ; work ; adhoc ; consulting 
 13:05 - 13:35 ;  work ; WRK-345-bugfix-foo ; code
 ```
+
+#### Output example
+
+* Here is an example of an output stacked area chart of a `core-category:work` query, 
+![image](doc/images/example-stacked-2018-02-11.png)
 
