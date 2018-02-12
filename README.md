@@ -8,12 +8,14 @@
 4. [Can I use this?](#can-i-use-this)
 
 ### What
-This is a simple time tracker [lambda](https://aws.amazon.com/lambda/) and [DynamoDB](https://aws.amazon.com/dynamodb/) based service, built as a project to learn clojure and micro services. The initial inspiration came from reading the book [168 Hours](https://lauravanderkam.com/books/168-hours/), in which Laura Vanderkam asks us to really see what we are doing with our time. There are 168 hours in a week and her claim is that although we feel we never have enough time, journaling what we do is a means to bullshit test ourselves.
+This is a simple time tracker [lambda](https://aws.amazon.com/lambda/) and [DynamoDB](https://aws.amazon.com/dynamodb/) based service, built as a project to learn [clojure](https://www.braveclojure.com/) and micro services. The initial inspiration came from reading the book [168 Hours](https://lauravanderkam.com/books/168-hours/), in which Laura Vanderkam asks us to really see what we are doing with our time. There are 168 hours in a week and her claim is that although we feel we never have enough time, journaling what we do is a means to bullshit test ourselves.
 
 ### Input data
-* We split our time between `personal` and `work` I think. 
+* We split our time between `personal` and `work` universes.
+* _(Actually this project doesnt care how you divide your life, but the first term, below, is a "core-category" )_
+* ...
 * And furthermore we bring our attention to either specific *Projects*, which have a beginning and an end, such as the below `taxes-2017`--_hopefully one day I will finish my taxes_--and `adhoc` tasks which is meant to record time spent helping a colleague for example (here called `consulting`, below). 
-* `routine` is a potentially useful or not distinction of things we do which do not have an *End*.
+* `routine` is a potentially useful --_or not_-- distinction of things we do which do not have an *End*.
 ```
 times 2018-02-10
 
@@ -27,6 +29,7 @@ times 2018-02-10
 ### Output example
 
 * Here is an example of an output stacked area chart of a `core-category:work` query, which is using the author's data from December of 2017. This uses the d3js so called _stacked_ layout. The _y-axis_ represents minutes.
+* This chart is not labeled, but it is possible to see that some days in the week of _December 4th_ had multiple competing interests, while the week of _Dec 11th_ there was a bit more focus on the _Purple project_.
 ![image](doc/images/example-stacked-2018-02-11.png)
 * This particular layout only allows for a max of `20` layers before colors are re-used for other categories.
 * [a lot can be said](http://leebyron.com/streamgraph/stackedgraphs_byron_wattenberg.pdf) about stacked area chart aesthetics.
