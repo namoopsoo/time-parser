@@ -35,7 +35,7 @@ times 2018-02-10
 * [a lot can be said](http://leebyron.com/streamgraph/stackedgraphs_byron_wattenberg.pdf) about stacked area chart aesthetics.
 
 ### Architecture overview
-Here's a super simple overview.
+Here's a super simple overview. There are several lambdas at play here, but the general picture looks like this.
 
 ![image](doc/architecture.png)
 
