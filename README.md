@@ -1,4 +1,6 @@
-### toc
+<img src="doc/images/example-stacked-2018-02-11.png" width="200"></img>
+
+### Table of Concents
 1. [What](#what)
 2. [Input data](#input-data)
 3. [Output example](#output-example)
@@ -6,7 +8,7 @@
 4. [Can I use this?](#can-i-use-this)
 
 ### What
-A simple time tracker lambda based service, built as a project to learn clojure and micro services. The initial inspiration came from reading the book [168 Hours](https://lauravanderkam.com/books/168-hours/), in which Laura Vanderkam asks us to really see what we are doing with our time. There are 168 hours in a week and her claim is that although we feel we never have enough time, journaling what we do is a means to bullshit test ourselves.
+This is a simple time tracker [lambda](https://aws.amazon.com/lambda/) and [DynamoDB](https://aws.amazon.com/dynamodb/) based service, built as a project to learn clojure and micro services. The initial inspiration came from reading the book [168 Hours](https://lauravanderkam.com/books/168-hours/), in which Laura Vanderkam asks us to really see what we are doing with our time. There are 168 hours in a week and her claim is that although we feel we never have enough time, journaling what we do is a means to bullshit test ourselves.
 
 ### Input data
 * We split our time between `personal` and `work` I think. 
@@ -30,6 +32,7 @@ times 2018-02-10
 * [a lot can be said](http://leebyron.com/streamgraph/stackedgraphs_byron_wattenberg.pdf) about stacked area chart aesthetics.
 
 ### Architecture overview
+Here's a super simple overview.
 ![image](doc/architecture.png)
 
 * Here, `crontab -l` shows how an upload script runs every 20 minutes
